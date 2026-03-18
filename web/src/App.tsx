@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Menu, List } from 'lucide-react'
+import { Menu, List, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
@@ -113,6 +113,30 @@ function App() {
             </Button>
           )}
           
+          {/* Desktop sidebar toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? '展开文件列表' : '收起文件列表'}
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          </Button>
+          
+          {/* Desktop outline toggle */}
+          {outline.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => setOutlineCollapsed(!outlineCollapsed)}
+              title={outlineCollapsed ? '展开目录' : '收起目录'}
+            >
+              {outlineCollapsed ? <PanelRight className="h-5 w-5" /> : <PanelRightClose className="h-5 w-5" />}
+            </Button>
+          )}
+          
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
@@ -120,19 +144,15 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 flex overflow-hidden">
         {/* Desktop Sidebar (FileTree) */}
-        <aside 
-          className={`hidden lg:flex flex-col bg-card border-r border-border transition-all duration-200 ${
-            sidebarCollapsed ? 'w-12' : 'w-72'
-          }`}
-        >
-          <FileTree 
-            files={files} 
-            onSelect={handleFileSelect}
-            selectedPath={currentFile}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-        </aside>
+        {!sidebarCollapsed && (
+          <aside className="hidden lg:flex flex-col bg-card border-r border-border w-72">
+            <FileTree 
+              files={files} 
+              onSelect={handleFileSelect}
+              selectedPath={currentFile}
+            />
+          </aside>
+        )}
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
@@ -150,16 +170,10 @@ function App() {
         </div>
         
         {/* Desktop Outline */}
-        {outline.length > 0 && (
-          <aside 
-            className={`hidden lg:flex flex-col bg-card border-l border-border transition-all duration-200 ${
-              outlineCollapsed ? 'w-12' : 'w-60'
-            }`}
-          >
+        {outline.length > 0 && !outlineCollapsed && (
+          <aside className="hidden lg:flex flex-col bg-card border-l border-border w-60">
             <Outline 
               items={outline} 
-              collapsed={outlineCollapsed}
-              onToggleCollapse={() => setOutlineCollapsed(!outlineCollapsed)}
             />
           </aside>
         )}
@@ -175,8 +189,6 @@ function App() {
             files={files} 
             onSelect={handleFileSelect}
             selectedPath={currentFile}
-            collapsed={false}
-            onToggleCollapse={() => {}}
           />
         </SheetContent>
       </Sheet>
@@ -189,8 +201,6 @@ function App() {
           </SheetHeader>
           <Outline 
             items={outline} 
-            collapsed={false}
-            onToggleCollapse={() => {}}
           />
         </SheetContent>
       </Sheet>

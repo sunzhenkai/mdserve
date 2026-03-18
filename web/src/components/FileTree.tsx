@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, ChevronDown, FileText, Folder, PanelLeftClose, PanelLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ChevronRight, ChevronDown, FileText, Folder } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { FileInfo } from '../types'
@@ -9,8 +8,6 @@ interface FileTreeProps {
   files: FileInfo[]
   onSelect: (path: string) => void
   selectedPath: string | null
-  collapsed: boolean
-  onToggleCollapse: () => void
 }
 
 interface TreeNodeProps {
@@ -76,29 +73,26 @@ function TreeNode({ item, onSelect, selectedPath, depth }: TreeNodeProps) {
   )
 }
 
-export function FileTree({ files, onSelect, selectedPath, collapsed, onToggleCollapse }: FileTreeProps) {
+export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   return (
     <div className="h-full flex flex-col">
-
-      {!collapsed && (
-        <ScrollArea className="flex-1">
-          <div className="p-2">
-            {files.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-4">暂无文件</div>
-            ) : (
-              files.map((file) => (
-                <TreeNode
-                  key={file.path}
-                  item={file}
-                  onSelect={onSelect}
-                  selectedPath={selectedPath}
-                  depth={0}
-                />
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      )}
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {files.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-4">暂无文件</div>
+          ) : (
+            files.map((file) => (
+              <TreeNode
+                key={file.path}
+                item={file}
+                onSelect={onSelect}
+                selectedPath={selectedPath}
+                depth={0}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   )
 }

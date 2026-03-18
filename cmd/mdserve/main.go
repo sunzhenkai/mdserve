@@ -29,7 +29,7 @@ func main() {
 	}
 
 	serveCmd.Flags().IntVarP(&port, "port", "p", 3000, "Port to listen on")
-	serveCmd.Flags().StringVar(&host, "host", "127.0.0.1", "Host to bind to")
+	serveCmd.Flags().StringVarP(&host, "host", "H", "127.0.0.1", "Host to bind to")
 
 	rootCmd.AddCommand(serveCmd)
 

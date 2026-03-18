@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ChevronRight, ChevronDown, FileText, Folder } from 'lucide-react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 import { FileInfo } from '../types'
 
 interface FileTreeProps {
@@ -31,24 +33,27 @@ function TreeNode({ item, onSelect, selectedPath, depth }: TreeNodeProps) {
   return (
     <div className="tree-node">
       <div 
-        className={`tree-item ${isSelected ? 'selected' : ''}`}
+        className={cn(
+          "flex items-center gap-1 px-2 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent",
+          isSelected && "bg-accent text-accent-foreground"
+        )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
       >
         {isDirectory ? (
           <>
-            <span className="tree-icon">
-              {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <span className="flex items-center justify-center w-4 h-4 text-muted-foreground">
+              {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </span>
-            <Folder size={16} className="folder-icon" />
+            <Folder className="h-4 w-4 text-primary flex-shrink-0" />
           </>
         ) : (
           <>
-            <span className="tree-icon-spacer" />
-            <FileText size={16} className="file-icon" />
+            <span className="w-4 h-4" />
+            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </>
         )}
-        <span className="tree-name">{item.name}</span>
+        <span className="text-sm truncate">{item.name}</span>
       </div>
       
       {isDirectory && expanded && item.children && (
@@ -70,25 +75,24 @@ function TreeNode({ item, onSelect, selectedPath, depth }: TreeNodeProps) {
 
 export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   return (
-    <div className="file-tree">
-      <div className="file-tree-header">
-        <h3>文件列表</h3>
-      </div>
-      <div className="file-tree-content">
-        {files.length === 0 ? (
-          <div className="empty-tree">暂无文件</div>
-        ) : (
-          files.map((file) => (
-            <TreeNode
-              key={file.path}
-              item={file}
-              onSelect={onSelect}
-              selectedPath={selectedPath}
-              depth={0}
-            />
-          ))
-        )}
-      </div>
+    <div className="h-full flex flex-col">
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {files.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-4">暂无文件</div>
+          ) : (
+            files.map((file) => (
+              <TreeNode
+                key={file.path}
+                item={file}
+                onSelect={onSelect}
+                selectedPath={selectedPath}
+                depth={0}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   )
 }

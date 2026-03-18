@@ -2,11 +2,62 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { Copy, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import 'highlight.js/styles/github-dark.css'
 
 interface MarkdownViewerProps {
   content: string
+}
+
+// 代码块包装组件，带复制按钮
+function CodeBlock({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
+  const [copied, setCopied] = useState(false)
+  const preRef = useRef<HTMLPreElement>(null)
+  
+  const handleCopy = async () => {
+    if (preRef.current) {
+      const code = preRef.current.textContent || ''
+      try {
+        // 优先使用 Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(code)
+        } else {
+          // Fallback: 使用 execCommand
+          const textarea = document.createElement('textarea')
+          textarea.value = code
+          textarea.style.position = 'fixed'
+          textarea.style.left = '-9999px'
+          document.body.appendChild(textarea)
+          textarea.select()
+          document.execCommand('copy')
+          document.body.removeChild(textarea)
+        }
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch (err) {
+        console.error('Failed to copy:', err)
+      }
+    }
+  }
+  
+  return (
+    <div className="relative group my-4">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={handleCopy}
+        title={copied ? '已复制' : '复制代码'}
+      >
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </Button>
+      <pre ref={preRef} className="!bg-slate-900 dark:!bg-slate-950 rounded-lg p-4 overflow-x-auto" {...props}>
+        {children}
+      </pre>
+    </div>
+  )
 }
 
 export function MarkdownViewer({ content }: MarkdownViewerProps) {
@@ -31,14 +82,14 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }, [])
 
   return (
-    <div className="markdown-viewer">
+    <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeSlug]}
         components={{
-          // 为代码块添加复制按钮（简化版）
+          // 为代码块添加复制按钮
           pre: ({ children }) => {
-            return <pre className="code-block">{children}</pre>
+            return <CodeBlock>{children}</CodeBlock>
           },
           // 处理图片
           img: ({ src, alt }) => {
@@ -46,7 +97,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
             if (src && !src.startsWith('http') && !src.startsWith('/')) {
               src = `/api/asset?path=${encodeURIComponent(src)}`
             }
-            return <img src={src} alt={alt} />
+            return <img src={src} alt={alt} className="rounded-lg" />
           },
         }}
       >

@@ -41,13 +41,26 @@ func (s *Server) handleGetFile(c *gin.Context) {
 		return
 	}
 
-	// Parse outline
-	outline := markdown.ExtractOutline(string(content))
+	contentStr := string(content)
 
-	c.JSON(http.StatusOK, gin.H{
-		"content": string(content),
+	// Extract frontmatter
+	frontMatter, cleanContent := markdown.ExtractFrontMatter(contentStr)
+
+	// Parse outline from clean content (without frontmatter)
+	outline := markdown.ExtractOutline(cleanContent)
+
+	response := gin.H{
+		"content": cleanContent,
 		"outline": outline,
-	})
+	}
+
+	// Add frontmatter data if exists
+	if frontMatter != nil {
+		response["tags"] = frontMatter.Tags
+		response["categories"] = frontMatter.Categories
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // SearchResult represents a search result
@@ -176,4 +189,37 @@ func extractContext(line, query string) string {
 		return context
 	}
 	return line
+}
+
+// handleGetConfig returns the server configuration for the frontend
+func (s *Server) handleGetConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"siteName":   s.config.SiteName,
+		"defaultDoc": s.config.DefaultDoc,
+	})
+}
+
+// handleGetMenu returns the menu configuration
+func (s *Server) handleGetMenu(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"menu": s.config.Menu,
+	})
+}
+
+// handleGetTags returns all tags and categories with their associated documents
+func (s *Server) handleGetTags(c *gin.Context) {
+	if s.tagIndexer == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"tags":       map[string][]string{},
+			"categories": map[string][]string{},
+		})
+		return
+	}
+
+	tags := s.tagIndexer.GetTags()
+	categories := s.tagIndexer.GetCategories()
+	c.JSON(http.StatusOK, gin.H{
+		"tags":       tags,
+		"categories": categories,
+	})
 }

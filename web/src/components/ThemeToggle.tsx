@@ -1,4 +1,5 @@
-import { Sun, Moon } from 'lucide-react'
+import { Moon, Sun } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface ThemeToggleProps {
   theme: 'light' | 'dark'
@@ -7,12 +8,17 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   return (
-    <button 
-      className="theme-toggle" 
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={onToggle}
       title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
     >
-      {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-    </button>
+      {theme === 'light' ? (
+        <Moon className="h-5 w-5" />
+      ) : (
+        <Sun className="h-5 w-5" />
+      )}
+    </Button>
   )
 }

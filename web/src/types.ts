@@ -16,3 +16,10 @@ export interface SearchResult {
   name: string
   matches: string[]
 }
+
+export interface FileData {
+  content: string
+  outline: OutlineItem[]
+  tags?: string[]
+  categories?: string[]
+}

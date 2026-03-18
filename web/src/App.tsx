@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Menu, List, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react'
+import { Menu, List, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Tags } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
 import { SearchBar } from './components/SearchBar'
 import { ThemeToggle } from './components/ThemeToggle'
+import { TagsModal } from './components/TagsModal'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
 import { useWebSocket } from './hooks/useWebSocket'
@@ -17,6 +18,8 @@ function App() {
   const [content, setContent] = useState<string>('')
   const [outline, setOutline] = useState<OutlineItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [tags, setTags] = useState<string[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   
   // 桌面端折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -25,6 +28,9 @@ function App() {
   // 移动端抽屉状态
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false)
+  
+  // Tags modal 状态
+  const [tagsModalOpen, setTagsModalOpen] = useState(false)
   
   const { theme, toggleTheme } = useTheme()
   const wsMessage = useWebSocket('/ws')
@@ -54,6 +60,8 @@ function App() {
       const data = await res.json()
       setContent(data.content || '')
       setOutline(data.outline || [])
+      setTags(data.tags || [])
+      setCategories(data.categories || [])
       setCurrentFile(path)
       // 移动端加载文件后关闭抽屉
       setMobileMenuOpen(false)
@@ -137,6 +145,18 @@ function App() {
             </Button>
           )}
           
+          {/* Tags button */}
+          {(tags.length > 0 || categories.length > 0) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTagsModalOpen(true)}
+              title="查看标签和分类"
+            >
+              <Tags className="h-5 w-5" />
+            </Button>
+          )}
+          
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
@@ -204,6 +224,14 @@ function App() {
           />
         </SheetContent>
       </Sheet>
+      
+      {/* Tags Modal */}
+      <TagsModal 
+        open={tagsModalOpen}
+        onOpenChange={setTagsModalOpen}
+        tags={tags}
+        categories={categories}
+      />
     </div>
   )
 }

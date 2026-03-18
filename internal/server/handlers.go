@@ -190,3 +190,33 @@ func extractContext(line, query string) string {
 	}
 	return line
 }
+
+// handleGetConfig returns the server configuration for the frontend
+func (s *Server) handleGetConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"siteName":   s.config.SiteName,
+		"defaultDoc": s.config.DefaultDoc,
+	})
+}
+
+// handleGetMenu returns the menu configuration
+func (s *Server) handleGetMenu(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"menu": s.config.Menu,
+	})
+}
+
+// handleGetTags returns all tags with their associated documents
+func (s *Server) handleGetTags(c *gin.Context) {
+	if s.tagIndexer == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"tags": map[string][]string{},
+		})
+		return
+	}
+
+	tags := s.tagIndexer.GetTags()
+	c.JSON(http.StatusOK, gin.H{
+		"tags": tags,
+	})
+}

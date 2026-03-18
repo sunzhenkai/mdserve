@@ -1,0 +1,33 @@
+# mdserve 示例配置文件
+
+# 网站配置
+site:
+  name: "mdserve 文档站"
+  default_doc: "README.md"
+
+# 服务配置
+server:
+  host: "127.0.0.1"
+  port: 3000
+
+# Git 自动拉取
+git:
+  enabled: false
+  interval: "5m"
+  branch: "main"
+
+# 菜单配置
+menu:
+  - title: "指南"
+    children:
+      - title: "快速开始"
+        type: doc
+        path: "docs/guide/getting-started"
+      - title: "配置说明"
+        type: doc
+        path: "docs/guide/configuration"
+  - title: "API"
+    children:
+      - title: "接口文档"
+        type: category
+        path: "docs/api"

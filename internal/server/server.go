@@ -11,26 +11,40 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/wii/mdserve/internal/tag"
 	"github.com/wii/mdserve/internal/watcher"
 )
 
 //go:embed static/*
 var staticFS embed.FS
 
+// MenuItem represents a menu item for the server
+type MenuItem struct {
+	Title    string     `json:"title"`
+	Children []MenuItem `json:"children,omitempty"`
+	Type     string     `json:"type,omitempty"`
+	Path     string     `json:"path,omitempty"`
+	Tag      string     `json:"tag,omitempty"`
+}
+
 // Config holds server configuration
 type Config struct {
-	Path string
-	Host string
-	Port int
+	Path       string
+	Host       string
+	Port       int
+	SiteName   string
+	DefaultDoc string
+	Menu       []MenuItem
 }
 
 // Server represents the markdown server
 type Server struct {
-	config   *Config
-	router   *gin.Engine
-	watcher  *watcher.Watcher
-	hub      *WebSocketHub
-	rootPath string
+	config     *Config
+	router     *gin.Engine
+	watcher    *watcher.Watcher
+	hub        *WebSocketHub
+	rootPath   string
+	tagIndexer *tag.Indexer
 }
 
 // WebSocketHub manages WebSocket connections
@@ -113,12 +127,20 @@ func New(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
+	// Create tag indexer
+	tagIndexer := tag.NewIndexer(absPath)
+	if err := tagIndexer.Build(); err != nil {
+		// Log warning but don't fail - tag indexing is optional
+		fmt.Printf("[WARN] Failed to build tag index: %v\n", err)
+	}
+
 	server := &Server{
-		config:   config,
-		router:   router,
-		watcher:  w,
-		hub:      hub,
-		rootPath: absPath,
+		config:     config,
+		router:     router,
+		watcher:    w,
+		hub:        hub,
+		rootPath:   absPath,
+		tagIndexer: tagIndexer,
 	}
 
 	// Setup routes
@@ -144,6 +166,9 @@ func (s *Server) setupRoutes() {
 		api.GET("/files", s.handleGetFiles)
 		api.GET("/file", s.handleGetFile)
 		api.GET("/search", s.handleSearch)
+		api.GET("/config", s.handleGetConfig)
+		api.GET("/menu", s.handleGetMenu)
+		api.GET("/tags", s.handleGetTags)
 	}
 
 	// WebSocket route

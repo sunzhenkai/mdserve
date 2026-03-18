@@ -14,8 +14,12 @@ export function useTheme() {
   useEffect(() => {
     // 保存主题到 localStorage
     localStorage.setItem('mdserve-theme', theme)
-    // 应用主题到 document
-    document.documentElement.setAttribute('data-theme', theme)
+    // 应用主题到 document（使用 class 方式，适配 Tailwind）
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
   }, [theme])
 
   const toggleTheme = () => {

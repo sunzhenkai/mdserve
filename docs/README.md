@@ -1,3 +1,7 @@
+---
+tags: ["README"]
+---
+
 # mdserve 文档
 
 欢迎使用 mdserve - 一个实时 Markdown 文件服务器。
@@ -48,12 +52,12 @@ docs/
 
 ## 技术栈
 
-| 组件 | 技术 |
-|------|------|
-| 后端 | Go + Gin |
-| 前端 | React + TypeScript + Vite |
-| 样式 | Sass |
-| 实时通信 | WebSocket |
+| 组件     | 技术                      |
+| -------- | ------------------------- |
+| 后端     | Go + Gin                  |
+| 前端     | React + TypeScript + Vite |
+| 样式     | Sass                      |
+| 实时通信 | WebSocket                 |
 
 ## 贡献
 

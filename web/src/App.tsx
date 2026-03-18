@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Menu, List, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Tags } from 'lucide-react'
+import { Menu, List, ChevronLeft, ChevronRight, Tags } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
@@ -21,6 +21,10 @@ function App() {
   const [tags, setTags] = useState<string[]>([])
   const [categories, setCategories] = useState<string[]>([])
   
+  // 全局标签和分类数据
+  const [allTags, setAllTags] = useState<Record<string, string[]>>({})
+  const [allCategories, setAllCategories] = useState<Record<string, string[]>>({})
+  
   // 桌面端折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [outlineCollapsed, setOutlineCollapsed] = useState(false)
@@ -40,6 +44,17 @@ function App() {
     fetch('/api/files')
       .then(res => res.json())
       .then(data => setFiles(data.files || []))
+      .catch(console.error)
+  }, [])
+
+  // 加载全局标签和分类
+  useEffect(() => {
+    fetch('/api/tags')
+      .then(res => res.json())
+      .then(data => {
+        setAllTags(data.tags || {})
+        setAllCategories(data.categories || {})
+      })
       .catch(console.error)
   }, [])
 
@@ -121,32 +136,8 @@ function App() {
             </Button>
           )}
           
-          {/* Desktop sidebar toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? '展开文件列表' : '收起文件列表'}
-          >
-            {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-          </Button>
-          
-          {/* Desktop outline toggle */}
-          {outline.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden lg:flex"
-              onClick={() => setOutlineCollapsed(!outlineCollapsed)}
-              title={outlineCollapsed ? '展开目录' : '收起目录'}
-            >
-              {outlineCollapsed ? <PanelRight className="h-5 w-5" /> : <PanelRightClose className="h-5 w-5" />}
-            </Button>
-          )}
-          
-          {/* Tags button */}
-          {(tags.length > 0 || categories.length > 0) && (
+          {/* Tags button - always show if there are any tags or categories in the system */}
+          {(Object.keys(allTags).length > 0 || Object.keys(allCategories).length > 0) && (
             <Button
               variant="ghost"
               size="icon"
@@ -162,16 +153,39 @@ function App() {
       </header>
       
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
         {/* Desktop Sidebar (FileTree) */}
-        {!sidebarCollapsed && (
-          <aside className="hidden lg:flex flex-col bg-card border-r border-border w-72">
+        {!sidebarCollapsed ? (
+          <aside className="hidden lg:flex flex-col bg-card border-r border-border w-72 relative">
             <FileTree 
               files={files} 
               onSelect={handleFileSelect}
               selectedPath={currentFile}
             />
+            {/* 右边缘中间的收起按钮 */}
+            <button 
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 
+                         w-5 h-12 flex items-center justify-center
+                         bg-card border border-border rounded-r-md shadow-sm
+                         hover:bg-accent hover:w-6 transition-all cursor-pointer"
+              onClick={() => setSidebarCollapsed(true)}
+              title="收起文件列表"
+            >
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
           </aside>
+        ) : (
+          /* 收起状态：左边缘展开按钮 */
+          <button 
+            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10
+                       w-5 h-12 items-center justify-center
+                       bg-card border border-border rounded-r-md shadow-sm
+                       hover:bg-accent hover:w-6 transition-all cursor-pointer"
+            onClick={() => setSidebarCollapsed(false)}
+            title="展开文件列表"
+          >
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
         )}
         
         {/* Content */}
@@ -190,12 +204,37 @@ function App() {
         </div>
         
         {/* Desktop Outline */}
-        {outline.length > 0 && !outlineCollapsed && (
-          <aside className="hidden lg:flex flex-col bg-card border-l border-border w-60">
-            <Outline 
-              items={outline} 
-            />
-          </aside>
+        {outline.length > 0 && (
+          !outlineCollapsed ? (
+            <aside className="hidden lg:flex flex-col bg-card border-l border-border w-60 relative">
+              <Outline 
+                items={outline} 
+              />
+              {/* 左边缘中间的收起按钮 */}
+              <button 
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 
+                           w-5 h-12 flex items-center justify-center
+                           bg-card border border-border rounded-l-md shadow-sm
+                           hover:bg-accent hover:w-6 transition-all cursor-pointer"
+                onClick={() => setOutlineCollapsed(true)}
+                title="收起目录"
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </aside>
+          ) : (
+            /* 收起状态：右边缘展开按钮 */
+            <button 
+              className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10
+                         w-5 h-12 items-center justify-center
+                         bg-card border border-border rounded-l-md shadow-sm
+                         hover:bg-accent hover:w-6 transition-all cursor-pointer"
+              onClick={() => setOutlineCollapsed(false)}
+              title="展开目录"
+            >
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )
         )}
       </main>
       
@@ -229,8 +268,11 @@ function App() {
       <TagsModal 
         open={tagsModalOpen}
         onOpenChange={setTagsModalOpen}
-        tags={tags}
-        categories={categories}
+        allTags={allTags}
+        allCategories={allCategories}
+        currentTags={tags}
+        currentCategories={categories}
+        onFileSelect={handleFileSelect}
       />
     </div>
   )

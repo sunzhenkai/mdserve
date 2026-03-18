@@ -206,17 +206,20 @@ func (s *Server) handleGetMenu(c *gin.Context) {
 	})
 }
 
-// handleGetTags returns all tags with their associated documents
+// handleGetTags returns all tags and categories with their associated documents
 func (s *Server) handleGetTags(c *gin.Context) {
 	if s.tagIndexer == nil {
 		c.JSON(http.StatusOK, gin.H{
-			"tags": map[string][]string{},
+			"tags":       map[string][]string{},
+			"categories": map[string][]string{},
 		})
 		return
 	}
 
 	tags := s.tagIndexer.GetTags()
+	categories := s.tagIndexer.GetCategories()
 	c.JSON(http.StatusOK, gin.H{
-		"tags": tags,
+		"tags":       tags,
+		"categories": categories,
 	})
 }

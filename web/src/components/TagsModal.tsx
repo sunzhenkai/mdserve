@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Dialog } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tag, Folder, FileText, Star, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ModalShell } from '@/components/common/ModalShell'
@@ -63,49 +62,63 @@ export function TagsModal({
     onOpenChange(false)
   }
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value as TabType)
+  const handleTabChange = (value: TabType) => {
+    setActiveTab(value)
     setSelectedItem(null)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <ModalShell className="max-h-[80vh]" hideClose>
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="flex-1 flex flex-col min-h-0"
-        >
-          {/* modal header: 标题 + 分类/标签切换 */}
-          <div className="flex flex-col flex-shrink-0 border-b border-border bg-background">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-base font-semibold leading-none">标签和分类</h2>
-              </div>
-              <button
-                onClick={() => onOpenChange(false)}
-                className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
-                title="关闭"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
+        {/* modal header: 标题 + 分类/标签切换 */}
+        <div className="flex flex-col flex-shrink-0 border-b border-border bg-background">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-base font-semibold leading-none">标签和分类</h2>
             </div>
-
-            <TabsList className="grid w-full grid-cols-2 px-4 pb-3 gap-1 bg-transparent">
-              <TabsTrigger value="categories" className="flex items-center gap-1 text-xs px-2 py-1">
-                <Folder className="h-4 w-4" />
-                分类 ({categoriesList.length})
-              </TabsTrigger>
-              <TabsTrigger value="tags" className="flex items-center gap-1 text-xs px-2 py-1">
-                <Tag className="h-4 w-4" />
-                标签 ({tagsList.length})
-              </TabsTrigger>
-            </TabsList>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
+              title="关闭"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
 
-          <TabsContent value="tags" className="flex-1 min-h-0 overflow-y-auto px-4 mt-0">
-            {tagsList.length === 0 ? (
+          <div className="grid w-full grid-cols-2 px-4 pb-3 gap-1 bg-transparent">
+            <button
+              type="button"
+              onClick={() => handleTabChange('categories')}
+              className={cn(
+                'flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                activeTab === 'categories'
+                  ? 'bg-background text-foreground border-border/60 shadow-sm'
+                  : 'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60'
+              )}
+            >
+              <Folder className="h-4 w-4" />
+              分类 ({categoriesList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('tags')}
+              className={cn(
+                'flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                activeTab === 'tags'
+                  ? 'bg-background text-foreground border-border/60 shadow-sm'
+                  : 'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60'
+              )}
+            >
+              <Tag className="h-4 w-4" />
+              标签 ({tagsList.length})
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 mt-0">
+          {activeTab === 'tags' ? (
+            tagsList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无标签
               </div>
@@ -121,32 +134,25 @@ export function TagsModal({
                   type="tags"
                 />
               </div>
-            )}
-          </TabsContent>
-
-          <TabsContent
-            value="categories"
-            className="flex-1 min-h-0 overflow-y-auto px-4 mt-0"
-          >
-            {categoriesList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无分类
-              </div>
-            ) : (
-              <div className="flex flex-col min-h-0 w-full">
-                <ItemPanel
-                  items={categoriesList}
-                  currentItems={currentCategories}
-                  selectedItem={selectedItem}
-                  selectedDocs={selectedDocs}
-                  onItemClick={handleItemClick}
-                  onFileClick={handleFileClick}
-                  type="categories"
-                />
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            )
+          ) : categoriesList.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              暂无分类
+            </div>
+          ) : (
+            <div className="flex flex-col min-h-0 w-full">
+              <ItemPanel
+                items={categoriesList}
+                currentItems={currentCategories}
+                selectedItem={selectedItem}
+                selectedDocs={selectedDocs}
+                onItemClick={handleItemClick}
+                onFileClick={handleFileClick}
+                type="categories"
+              />
+            </div>
+          )}
+        </div>
       </ModalShell>
     </Dialog>
   )
@@ -213,9 +219,9 @@ function ItemPanel({
         </div>
       </div>
 
-      {/* 下：关联文档列表 */}
-      <div className="border-t border-border/50 pt-3">
-        {selectedItem ? (
+      {/* 下：关联文档列表（未选择时不渲染任何占位区域） */}
+      {selectedItem ? (
+        <div className="border-t border-border/50 pt-3">
           <div>
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-2">
               <h4 className="px-1 text-sm font-medium text-muted-foreground mb-2">
@@ -230,8 +236,8 @@ function ItemPanel({
                     key={doc}
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 h-auto py-2 px-2 rounded-md text-sm font-normal",
-                      "hover:bg-accent hover:text-accent-foreground"
+                      'w-full justify-start gap-2 h-auto py-2 px-2 rounded-md text-sm font-normal',
+                      'hover:bg-accent hover:text-accent-foreground'
                     )}
                     onClick={() => onFileClick(doc)}
                   >
@@ -249,12 +255,8 @@ function ItemPanel({
               })}
             </div>
           </div>
-        ) : (
-          <div className="min-h-[120px] flex items-center justify-center px-2 text-xs text-muted-foreground pb-3">
-            请选择标签/分类查看关联文档
-          </div>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }

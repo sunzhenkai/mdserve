@@ -247,6 +247,11 @@ body {
   scrollbar-width: none;
 }
 
+.mdserve-scrollbar {
+  /* 让滚动条显隐不改变布局宽度（主要用于全屏/非全屏的右上角按钮稳定定位） */
+  scrollbar-gutter: stable;
+}
+
 .mdserve-scrollbar-hidden::-webkit-scrollbar {
   width: 0;
   height: 0;

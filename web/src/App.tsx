@@ -290,7 +290,7 @@ function AppContent() {
                   />
                 </div>
                 <button
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-r-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -304,7 +304,7 @@ function AppContent() {
 
             {sidebarCollapsed && (
               <button
-                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10
+                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30
                            w-4 h-11 items-center justify-center
                            bg-card border border-border rounded-r-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -330,12 +330,12 @@ function AppContent() {
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
+                    className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar mdserve-scrollbar-hidden"
                   >
                     <div ref={contentTopRef} />
 
                     {hasDocumentInfo ? (
-                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70 shadow-sm">
+                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70">
                         <button
                           onClick={() => setDocumentFullscreen(true)}
                           className="absolute top-1/2 right-3 -translate-y-1/2 z-10
@@ -393,7 +393,7 @@ function AppContent() {
                   <Outline items={outline} />
                 </div>
                 <button
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-l-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -407,7 +407,7 @@ function AppContent() {
 
             {outlineCollapsed && (
               <button
-                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10
+                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30
                            w-4 h-11 items-center justify-center
                            bg-card border border-border rounded-l-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -474,7 +474,7 @@ function AppContent() {
             <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
               <div
                 ref={fullscreenScrollRef}
-                className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
+                className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar mdserve-scrollbar-hidden"
               >
                 {hasDocumentInfo ? null : (
                   <button
@@ -492,7 +492,7 @@ function AppContent() {
                 <div ref={contentTopRef} />
 
                 {hasDocumentInfo ? (
-                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70 shadow-sm">
+                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70">
                     <button
                       onClick={() => setDocumentFullscreen(false)}
                       className="absolute top-1/2 right-3 -translate-y-1/2 z-10

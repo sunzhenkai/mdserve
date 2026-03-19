@@ -10,6 +10,7 @@ import { SearchModal } from './components/SearchModal'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
 import { FileProvider, UIProvider, useFile, useUI } from './contexts'
+import { useEffect, useRef } from 'react'
 
 function AppContent() {
   const {
@@ -44,6 +45,51 @@ function AppContent() {
     setTagsModalOpen,
     openTagsModal,
   } = useUI()
+
+  // 内容区滚动到顶部锚点（在 DocumentInfo 之前）
+  const contentTopRef = useRef<HTMLDivElement>(null)
+  const prevFileRef = useRef<string | null>(null)
+  const pendingTopScrollRef = useRef(false)
+
+  // 当切换到新文档时，待加载完成后滚动到顶部
+  useEffect(() => {
+    if (!currentFile) return
+    if (prevFileRef.current === null) {
+      prevFileRef.current = currentFile
+      return
+    }
+    if (prevFileRef.current !== currentFile) {
+      pendingTopScrollRef.current = true
+      prevFileRef.current = currentFile
+    }
+  }, [currentFile])
+
+  useEffect(() => {
+    if (!pendingTopScrollRef.current) return
+    if (loading) return
+
+    pendingTopScrollRef.current = false
+
+    const el = contentTopRef.current
+    if (!el) return
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // 对齐 `MarkdownViewer` 的淡入淡出（120ms）与下一帧，减少“滚动中闪烁”的观感
+    const timer = window.setTimeout(() => {
+      window.requestAnimationFrame(() => {
+        el.scrollIntoView({
+          behavior: prefersReducedMotion ? 'auto' : 'smooth',
+          block: 'start',
+        })
+      })
+    }, 130)
+
+    return () => window.clearTimeout(timer)
+  }, [loading, currentFile])
 
   // 包装 handleFileSelect，加载文件后关闭移动端菜单
   const handleFileSelect = (path: string) => {
@@ -163,6 +209,7 @@ function AppContent() {
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          <div ref={contentTopRef} />
           {loading ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               加载中...

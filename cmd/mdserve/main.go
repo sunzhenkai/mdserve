@@ -65,8 +65,14 @@ func main() {
 }
 
 func runServe(cmd *cobra.Command, args []string) {
-	// 1. Find and load config file
-	cfgFile := config.FindConfigFile(configPath)
+	// 1. Get document path from args (needed for config file search)
+	var docPath string
+	if len(args) > 0 {
+		docPath = args[0]
+	}
+
+	// 2. Find and load config file (search in docs path first, then current dir)
+	cfgFile := config.FindConfigFile(configPath, docPath)
 
 	var cfg *config.Config
 	if cfgFile != "" {
@@ -81,12 +87,6 @@ func runServe(cmd *cobra.Command, args []string) {
 			log.Printf("[WARN] Config file not found: %s, using defaults", configPath)
 		}
 		cfg = config.DefaultConfig()
-	}
-
-	// 2. Get document path from args
-	var docPath string
-	if len(args) > 0 {
-		docPath = args[0]
 	}
 
 	// 3. Merge command line flags into config

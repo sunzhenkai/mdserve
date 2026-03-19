@@ -23,3 +23,11 @@ export interface FileData {
   tags?: string[]
   categories?: string[]
 }
+
+export interface MenuItem {
+  title: string
+  children?: MenuItem[]
+  type?: 'doc' | 'category' | 'tag'
+  path?: string
+  tag?: string
+}

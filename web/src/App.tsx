@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Menu, List, ChevronLeft, ChevronRight, Tags } from 'lucide-react'
+import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
-import { SearchBar } from './components/SearchBar'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TagsModal } from './components/TagsModal'
+import { DocumentInfo } from './components/DocumentInfo'
+import { NavigationMenu } from './components/NavigationMenu'
+import { SearchModal } from './components/SearchModal'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useTheme } from './hooks/useTheme'
-import { FileInfo, OutlineItem } from './types'
+import { FileInfo, OutlineItem, MenuItem } from './types'
 
 function App() {
   const [files, setFiles] = useState<FileInfo[]>([])
@@ -25,6 +27,9 @@ function App() {
   const [allTags, setAllTags] = useState<Record<string, string[]>>({})
   const [allCategories, setAllCategories] = useState<Record<string, string[]>>({})
   
+  // 菜单数据
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  
   // 桌面端折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [outlineCollapsed, setOutlineCollapsed] = useState(false)
@@ -32,12 +37,28 @@ function App() {
   // 移动端抽屉状态
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   
   // Tags modal 状态
   const [tagsModalOpen, setTagsModalOpen] = useState(false)
+  const [tagsModalTab, setTagsModalTab] = useState<'tags' | 'categories' | undefined>(undefined)
+  const [tagsModalSelected, setTagsModalSelected] = useState<string | undefined>(undefined)
   
   const { theme, toggleTheme } = useTheme()
   const wsMessage = useWebSocket('/ws')
+
+  // 全局快捷键 Ctrl/Cmd+K 打开搜索
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setMobileSearchOpen(true)
+      }
+    }
+    
+    document.addEventListener('keydown', handleGlobalKeyDown)
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
 
   // 加载文件树
   useEffect(() => {
@@ -55,6 +76,14 @@ function App() {
         setAllTags(data.tags || {})
         setAllCategories(data.categories || {})
       })
+      .catch(console.error)
+  }, [])
+
+  // 加载菜单
+  useEffect(() => {
+    fetch('/api/menu')
+      .then(res => res.json())
+      .then(data => setMenuItems(data.menu || []))
       .catch(console.error)
   }, [])
 
@@ -91,12 +120,26 @@ function App() {
     loadFile(path)
   }
 
+  // 处理标签点击
+  const handleTagClick = (tag: string) => {
+    setTagsModalTab('tags')
+    setTagsModalSelected(tag)
+    setTagsModalOpen(true)
+  }
+
+  // 处理分类点击
+  const handleCategoryClick = (category: string) => {
+    setTagsModalTab('categories')
+    setTagsModalSelected(category)
+    setTagsModalOpen(true)
+  }
+
   return (
     <div className={`h-screen flex flex-col ${theme}`}>
       {/* Header */}
       <header className="h-14 flex items-center justify-between px-4 border-b border-border bg-card flex-shrink-0">
         {/* Left: Menu button (mobile) + Logo */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -108,20 +151,27 @@ function App() {
           <h1 className="text-xl font-bold text-primary">mdserve</h1>
         </div>
         
-        {/* Center: Search */}
-        <div className="flex-1 max-w-xl mx-4 hidden md:block">
-          <SearchBar onFileSelect={handleFileSelect} />
+        {/* Center: Navigation Menu */}
+        <div className="flex-1 flex justify-center">
+          <NavigationMenu 
+            items={menuItems}
+            onFileSelect={handleFileSelect}
+            onTagSelect={handleTagClick}
+            onCategorySelect={handleCategoryClick}
+          />
         </div>
         
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          {/* Mobile search button */}
+        {/* Right: Search + Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Search button */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            onClick={() => setMobileSearchOpen(true)}
+            title="搜索 (Ctrl+K)"
+            className="relative"
           >
-            <SearchBar onFileSelect={handleFileSelect} />
+            <Search className="h-5 w-5" />
           </Button>
           
           {/* Outline button (mobile) */}
@@ -195,7 +245,16 @@ function App() {
               加载中...
             </div>
           ) : content ? (
-            <MarkdownViewer content={content} />
+            <>
+              <DocumentInfo 
+                path={currentFile}
+                tags={tags}
+                categories={categories}
+                onTagClick={handleTagClick}
+                onCategoryClick={handleCategoryClick}
+              />
+              <MarkdownViewer content={content} />
+            </>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               请从左侧选择一个 Markdown 文件开始浏览
@@ -272,6 +331,15 @@ function App() {
         allCategories={allCategories}
         currentTags={tags}
         currentCategories={categories}
+        onFileSelect={handleFileSelect}
+        initialTab={tagsModalTab}
+        initialSelected={tagsModalSelected}
+      />
+
+      {/* Search Modal */}
+      <SearchModal
+        open={mobileSearchOpen}
+        onOpenChange={setMobileSearchOpen}
         onFileSelect={handleFileSelect}
       />
     </div>

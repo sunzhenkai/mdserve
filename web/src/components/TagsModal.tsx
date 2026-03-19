@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tag, Folder, FileText, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,8 @@ interface TagsModalProps {
   currentTags: string[]                    // 当前文档的标签
   currentCategories: string[]              // 当前文档的分类
   onFileSelect: (path: string) => void     // 点击文档跳转
+  initialTab?: TabType                     // 初始 tab
+  initialSelected?: string                 // 初始选中项
 }
 
 type TabType = 'tags' | 'categories'
@@ -22,10 +24,24 @@ export function TagsModal({
   allCategories, 
   currentTags, 
   currentCategories,
-  onFileSelect 
+  onFileSelect,
+  initialTab,
+  initialSelected
 }: TagsModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('tags')
-  const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'tags')
+  const [selectedItem, setSelectedItem] = useState<string | null>(initialSelected || null)
+
+  // 当 initialTab 或 initialSelected 变化时更新状态
+  useEffect(() => {
+    if (open) {
+      if (initialTab) {
+        setActiveTab(initialTab)
+      }
+      if (initialSelected) {
+        setSelectedItem(initialSelected)
+      }
+    }
+  }, [open, initialTab, initialSelected])
 
   const tagsList = Object.entries(allTags).sort(([a], [b]) => a.localeCompare(b))
   const categoriesList = Object.entries(allCategories).sort(([a], [b]) => a.localeCompare(b))

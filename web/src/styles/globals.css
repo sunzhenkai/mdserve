@@ -171,6 +171,20 @@ body {
   @apply prose prose-slate dark:prose-invert max-w-none;
 }
 
+/* 搜索关键词高亮 */
+.search-highlight {
+  background-color: oklch(90% 0.15 85);
+  color: oklch(25% 0.05 85);
+  padding: 0.5px 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.dark .search-highlight {
+  background-color: oklch(70% 0.15 85);
+  color: oklch(15% 0.02 85);
+}
+
 /* Highlight.js 暗色模式 */
 .dark .hljs {
   background-color: oklch(17.9% 0.019 264.5) !important;

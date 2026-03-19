@@ -88,17 +88,36 @@ func Load(path string) (*Config, error) {
 
 // FindConfigFile finds the config file to use
 // Returns empty string if no config file is found
-func FindConfigFile(customPath string) string {
-	// If custom path is specified, check if it exists
+// Search order:
+// 1. Custom path specified by user
+// 2. In the docs path directory
+// 3. In the current working directory
+func FindConfigFile(customPath string, docsPath string) string {
+	candidates := []string{".mdserve.yaml", ".mdserve.yml"}
+
+	// 1. If custom path is specified, check if it exists
 	if customPath != "" {
 		if _, err := os.Stat(customPath); err == nil {
-			return customPath
+			absPath, _ := filepath.Abs(customPath)
+			return absPath
 		}
 		return "" // Custom path specified but doesn't exist
 	}
 
-	// Look for default config files in current directory
-	candidates := []string{".mdserve.yaml", ".mdserve.yml"}
+	// 2. Look for config files in docs path directory
+	if docsPath != "" {
+		absDocsPath, err := filepath.Abs(docsPath)
+		if err == nil {
+			for _, name := range candidates {
+				configPath := filepath.Join(absDocsPath, name)
+				if _, err := os.Stat(configPath); err == nil {
+					return configPath
+				}
+			}
+		}
+	}
+
+	// 3. Look for config files in current working directory
 	for _, name := range candidates {
 		if _, err := os.Stat(name); err == nil {
 			absPath, _ := filepath.Abs(name)

@@ -79,6 +79,7 @@ export function TagsModal({
         <Tabs
           value={activeTab}
           onValueChange={(value) => handleTabChange(value as TabType)}
+          className="flex flex-col flex-1 min-h-0"
         >
           {/* modal header：标题 + 分类/标签切换 同一行 */}
           <div className="flex items-center gap-3 px-4 py-3 bg-background flex-shrink-0">
@@ -124,7 +125,7 @@ export function TagsModal({
             </button>
           </div>
 
-          <Separator className="bg-border" />
+          <Separator className="bg-border flex-shrink-0" />
 
           <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
             {activeItemsList.length === 0 ? (

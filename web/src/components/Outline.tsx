@@ -69,7 +69,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
     <div>
       <div
         className={cn(
-          "flex items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group",
+          "flex items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group min-w-0",
           levelClass === 1 && "font-medium",
           levelClass >= 3 && "text-xs",
           levelClass >= 4 && "text-xs opacity-80"
@@ -91,7 +91,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
           <span className="w-4 h-4" />
         )}
         <span
-          className="text-sm truncate flex-1"
+          className="min-w-0 flex-1 text-sm whitespace-nowrap overflow-x-auto mdserve-scrollbar-hidden"
           onClick={handleClick}
         >
           {node.item.text}

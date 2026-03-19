@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -66,9 +66,18 @@ interface TreeNodeProps {
   depth: number
   expandedPaths: Set<string>
   toggleExpand: (path: string) => void
+  registerNodeRef: (path: string) => (el: HTMLDivElement | null) => void
 }
 
-function TreeNode({ item, onSelect, selectedPath, depth, expandedPaths, toggleExpand }: TreeNodeProps) {
+function TreeNode({
+  item,
+  onSelect,
+  selectedPath,
+  depth,
+  expandedPaths,
+  toggleExpand,
+  registerNodeRef,
+}: TreeNodeProps) {
   const isDirectory = item.type === 'directory'
   const isExpanded = expandedPaths.has(item.path)
   const isSelected = item.path === selectedPath
@@ -85,11 +94,12 @@ function TreeNode({ item, onSelect, selectedPath, depth, expandedPaths, toggleEx
     <div className="tree-node">
       <div 
         className={cn(
-          "flex items-center gap-1 px-2 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent",
+          "flex items-center gap-1 px-2 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent min-w-0",
           isSelected && "bg-accent text-accent-foreground"
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
+        ref={registerNodeRef(item.path)}
       >
         {isDirectory ? (
           <>
@@ -104,7 +114,9 @@ function TreeNode({ item, onSelect, selectedPath, depth, expandedPaths, toggleEx
             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </>
         )}
-        <span className="text-sm truncate">{item.name}</span>
+        <span className="min-w-0 flex-1 text-sm whitespace-nowrap overflow-x-auto mdserve-scrollbar-hidden">
+          {item.name}
+        </span>
       </div>
       
       {isDirectory && isExpanded && item.children && (
@@ -118,6 +130,7 @@ function TreeNode({ item, onSelect, selectedPath, depth, expandedPaths, toggleEx
               depth={depth + 1}
               expandedPaths={expandedPaths}
               toggleExpand={toggleExpand}
+              registerNodeRef={registerNodeRef}
             />
           ))}
         </div>
@@ -135,6 +148,16 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
 
   // 展开状态：默认折叠；根据 URL/选中文档仅展开“当前文档路径”
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set())
+
+  // 用于“定位”按钮滚动到当前文档节点
+  const nodeRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
+  const registerNodeRef = useCallback(
+    (path: string) => (el: HTMLDivElement | null) => {
+      if (!path) return
+      nodeRefs.current.set(path, el)
+    },
+    []
+  )
 
   // 当 selectedPath 改变时，仅展开选中文档的父目录链
   useEffect(() => {
@@ -175,12 +198,39 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   // 判断是否全部折叠
   const isAllCollapsed = expandedPaths.size === 0 && allDirectoryPaths.size > 0
 
+  const handleLocate = () => {
+    if (!selectedPath) return
+
+    // 确保选中文档的父链都展开，否则它可能还没被渲染出来
+    const parentPaths = getParentPaths(selectedPath)
+    setExpandedPaths(new Set(parentPaths))
+
+    // 等待一次渲染完成后滚动到节点
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = nodeRefs.current.get(selectedPath)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+    })
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* 标题栏 */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border flex-shrink-0">
         <span className="text-sm font-medium text-muted-foreground">文件</span>
         <div className="flex items-center gap-1">
+          {selectedPath && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLocate}
+              className="h-6 px-2 text-xs"
+              title="定位当前文档在文档树中的位置"
+            >
+              定位
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -219,6 +269,7 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
                 depth={0}
                 expandedPaths={expandedPaths}
                 toggleExpand={toggleExpand}
+                registerNodeRef={registerNodeRef}
               />
             ))
           )}

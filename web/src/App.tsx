@@ -205,7 +205,7 @@ function AppContent() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="h-14 mx-4 mt-3 mb-3 flex items-center justify-between px-4 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
+      <header className="h-12 mx-3 mt-2 mb-2 flex items-center justify-between px-3 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
         {/* Left: Menu button (mobile) + Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
@@ -214,10 +214,10 @@ function AppContent() {
             className="lg:hidden"
             onClick={() => setMobileMenuOpen(true)}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </Button>
           {/* 点睛之色 logo：浅浅墨绿色淡淡的强调 */}
-          <h1 className="text-xl font-bold text-point">mdserve</h1>
+          <h1 className="text-lg font-bold text-point">mdserve</h1>
         </div>
         
         {/* Center: Navigation Menu */}
@@ -240,7 +240,7 @@ function AppContent() {
             title="搜索 (Ctrl+K)"
             className="relative"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4" />
           </Button>
           
           {/* Outline button (mobile) */}
@@ -251,7 +251,7 @@ function AppContent() {
               className="lg:hidden"
               onClick={() => setMobileOutlineOpen(true)}
             >
-              <List className="h-5 w-5" />
+              <List className="h-4 w-4" />
             </Button>
           )}
           
@@ -263,7 +263,7 @@ function AppContent() {
               onClick={() => setTagsModalOpen(true)}
               title="查看标签和分类"
             >
-              <Tags className="h-5 w-5" />
+              <Tags className="h-4 w-4" />
             </Button>
           )}
           
@@ -290,7 +290,7 @@ function AppContent() {
                   />
                 </div>
                 <button
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-50
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-50
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-r-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -400,7 +400,7 @@ function AppContent() {
                   <Outline items={outline} />
                 </div>
                 <button
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-50
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-50
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-l-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"

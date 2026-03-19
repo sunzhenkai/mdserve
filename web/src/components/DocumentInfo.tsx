@@ -17,7 +17,7 @@ export function DocumentInfo({ path, tags, categories, onTagClick, onCategoryCli
 
   return (
     // meta 信息：强制单行，避免路径/分类/标签在布局里“竖排多行”
-    <div className="flex items-center gap-3 min-w-0 whitespace-nowrap text-sm">
+    <div className="flex items-center gap-3 min-w-0 whitespace-nowrap text-sm w-full">
       {/* 路径 */}
       {path && (
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">

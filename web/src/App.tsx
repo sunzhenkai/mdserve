@@ -233,8 +233,8 @@ function AppContent() {
       <main className="flex-1 flex overflow-hidden relative gap-4 px-4 pb-4">
         {/* Desktop Sidebar (FileTree) */}
         {!sidebarCollapsed ? (
-          <aside className="hidden lg:flex w-72 h-full relative">
-            <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+          <aside className="hidden lg:flex w-72 min-w-72 h-full relative flex-shrink-0">
+            <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
               <div className="h-full flex flex-col">
                 <FileTree
                   files={files}
@@ -293,7 +293,7 @@ function AppContent() {
                     <div ref={contentTopRef} />
 
                     {hasDocumentInfo && (
-                      <div className="bg-point-soft py-2 pr-10">
+                      <div className="bg-point-soft py-2 -mx-4 px-4 pr-10">
                         <DocumentInfo
                           path={currentFile}
                           tags={tags}
@@ -319,8 +319,8 @@ function AppContent() {
         {/* Desktop Outline */}
         {outline.length > 0 && (
           !outlineCollapsed ? (
-            <aside className="hidden lg:flex w-72 h-full relative">
-              <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+            <aside className="hidden lg:flex w-72 min-w-72 h-full relative flex-shrink-0">
+              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
                 <div className="h-full flex flex-col">
                   <Outline items={outline} />
                 </div>
@@ -353,7 +353,7 @@ function AppContent() {
       
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-72 min-w-72 flex-shrink-0 p-0">
           <SheetHeader className="sr-only">
             <SheetTitle>文件列表</SheetTitle>
           </SheetHeader>
@@ -367,7 +367,7 @@ function AppContent() {
       
       {/* Mobile Outline Sheet */}
       <Sheet open={mobileOutlineOpen} onOpenChange={setMobileOutlineOpen}>
-        <SheetContent side="right" className="w-60 p-0">
+        <SheetContent side="right" className="w-60 min-w-60 flex-shrink-0 p-0">
           <SheetHeader className="sr-only">
             <SheetTitle>目录</SheetTitle>
           </SheetHeader>
@@ -417,7 +417,7 @@ function AppContent() {
                 <div ref={contentTopRef} />
 
                 {hasDocumentInfo && (
-                  <div className="bg-point-soft py-2 pr-10">
+                  <div className="bg-point-soft py-2 -mx-4 px-4 pr-10">
                     <DocumentInfo
                       path={currentFile}
                       tags={tags}

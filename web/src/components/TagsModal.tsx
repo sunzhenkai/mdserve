@@ -74,7 +74,7 @@ export function TagsModal({
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-1 flex flex-col min-h-0"
         >
           {/* modal header: 标题 + 分类/标签切换 */}
           <div className="flex flex-col flex-shrink-0">
@@ -104,13 +104,13 @@ export function TagsModal({
             </TabsList>
           </div>
 
-          <TabsContent value="tags" className="flex-1 min-h-0 overflow-hidden px-4 mt-0">
+          <TabsContent value="tags" className="flex-1 min-h-0 overflow-y-auto px-4 mt-0">
             {tagsList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无标签
               </div>
             ) : (
-              <div className="flex flex-1 overflow-hidden h-full min-h-0">
+              <div className="flex flex-col min-h-0 w-full">
                 <ItemPanel
                   items={tagsList}
                   currentItems={currentTags}
@@ -126,14 +126,14 @@ export function TagsModal({
 
           <TabsContent
             value="categories"
-            className="flex-1 min-h-0 overflow-hidden px-4 mt-0"
+            className="flex-1 min-h-0 overflow-y-auto px-4 mt-0"
           >
             {categoriesList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无分类
               </div>
             ) : (
-              <div className="flex flex-1 overflow-hidden h-full min-h-0">
+              <div className="flex flex-col min-h-0 w-full">
                 <ItemPanel
                   items={categoriesList}
                   currentItems={currentCategories}
@@ -147,20 +147,6 @@ export function TagsModal({
             )}
           </TabsContent>
         </Tabs>
-
-        {/* 图例说明 */}
-        {(tagsList.length > 0 || categoriesList.length > 0) && (
-          <div className="flex items-center gap-4 px-4 py-3 border-t border-border text-xs text-muted-foreground flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <Star className="h-3 w-3 fill-primary text-primary" />
-              <span>当前文档的{activeTab === 'tags' ? '标签' : '分类'}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs opacity-70">(n)</span>
-              <span>关联文档数量</span>
-            </div>
-          </div>
-        )}
       </ModalShell>
     </Dialog>
   )
@@ -186,7 +172,7 @@ function ItemPanel({
   onFileClick 
 }: ItemPanelProps) {
   return (
-    <div className="flex flex-col flex-1 overflow-hidden h-full min-h-0">
+    <div className="flex flex-col min-h-0 w-full">
       {/* 上：标签/分类列表 */}
       <div className="flex-shrink-0 min-h-[140px] max-h-[240px] overflow-y-auto pr-2">
         <div className="flex flex-wrap gap-2 py-2">
@@ -228,7 +214,7 @@ function ItemPanel({
       </div>
 
       {/* 下：关联文档列表 */}
-      <div className="flex-1 min-h-0 overflow-y-auto border-t border-border/50 pt-3">
+      <div className="border-t border-border/50 pt-3">
         {selectedItem ? (
           <div>
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-2">
@@ -264,7 +250,7 @@ function ItemPanel({
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center px-2 text-xs text-muted-foreground pb-3">
+          <div className="min-h-[120px] flex items-center justify-center px-2 text-xs text-muted-foreground pb-3">
             请选择标签/分类查看关联文档
           </div>
         )}

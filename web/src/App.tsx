@@ -342,7 +342,7 @@ function AppContent() {
                     <div ref={contentTopRef} />
 
                     {hasDocumentInfo ? (
-                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 border-b border-border/70">
+                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 -mr-6 px-4 border-b border-border/70">
                         <button
                           onClick={() => setDocumentFullscreen(true)}
                           className="absolute top-1/2 right-3 -translate-y-1/2 z-10
@@ -499,10 +499,10 @@ function AppContent() {
                 <div ref={contentTopRef} />
 
                 {hasDocumentInfo ? (
-                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 border-b border-border/70">
+                    <div className="relative bg-point-soft py-2 mb-4 -mx-4 -mr-6 px-4 border-b border-border/70">
                     <button
                       onClick={() => setDocumentFullscreen(false)}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 z-10
+                        className="absolute top-1/2 right-5 -translate-y-1/2 z-10
                                  p-1 rounded-md bg-background/70 backdrop-blur-sm
                                  border border-border/60 hover:bg-accent hover:text-accent-foreground
                                  opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"

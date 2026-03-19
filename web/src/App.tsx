@@ -334,35 +334,38 @@ function AppContent() {
             <>
               {!documentFullscreen && (
                 <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col z-0">
+                  {/* Meta header — 放在滚动容器外，不受滚动条占位影响，始终撑满卡片宽度 */}
+                  {hasDocumentInfo && (
+                    <div className="relative bg-point-soft py-2 px-4 border-b border-border/70 flex-shrink-0">
+                      <button
+                        onClick={() => setDocumentFullscreen(true)}
+                        className="absolute top-1/2 right-3 -translate-y-1/2 z-10
+                                   p-1 rounded-md bg-background/70 backdrop-blur-sm
+                                   border border-border/60 hover:bg-accent hover:text-accent-foreground
+                                   opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                        title="全屏"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </button>
+
+                      <DocumentInfo
+                        path={currentFile}
+                        tags={tags}
+                        categories={categories}
+                        onTagClick={handleTagClick}
+                        onCategoryClick={handleCategoryClick}
+                      />
+                    </div>
+                  )}
+
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
+                    className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative mdserve-scrollbar-hidden`}
                   >
                     <div ref={contentTopRef} />
 
-                    {hasDocumentInfo ? (
-                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 -mr-6 px-4 border-b border-border/70">
-                        <button
-                          onClick={() => setDocumentFullscreen(true)}
-                          className="absolute top-1/2 right-3 -translate-y-1/2 z-10
-                                     p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title="全屏"
-                        >
-                          <Maximize2 className="h-3.5 w-3.5" />
-                        </button>
-
-                        <DocumentInfo
-                          path={currentFile}
-                          tags={tags}
-                          categories={categories}
-                          onTagClick={handleTagClick}
-                          onCategoryClick={handleCategoryClick}
-                        />
-                      </div>
-                    ) : (
+                    {!hasDocumentInfo && (
                       <button
                         onClick={() => setDocumentFullscreen(true)}
                         className="absolute top-3 right-3 z-10
@@ -479,11 +482,35 @@ function AppContent() {
         <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
           <div className="h-full flex flex-col gap-4 px-4 py-4">
             <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
+              {/* Meta header — 放在滚动容器外，不受滚动条占位影响，始终撑满卡片宽度 */}
+              {hasDocumentInfo && (
+                <div className="relative bg-point-soft py-2 px-4 border-b border-border/70 flex-shrink-0">
+                  <button
+                    onClick={() => setDocumentFullscreen(false)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 z-10
+                               p-1 rounded-md bg-background/70 backdrop-blur-sm
+                               border border-border/60 hover:bg-accent hover:text-accent-foreground
+                               opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                    title="退出全屏 (Esc)"
+                  >
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  </button>
+
+                  <DocumentInfo
+                    path={currentFile}
+                    tags={tags}
+                    categories={categories}
+                    onTagClick={handleTagClick}
+                    onCategoryClick={handleCategoryClick}
+                  />
+                </div>
+              )}
+
               <div
                 ref={fullscreenScrollRef}
-                className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
+                className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative mdserve-scrollbar-hidden`}
               >
-                {hasDocumentInfo ? null : (
+                {!hasDocumentInfo && (
                   <button
                     onClick={() => setDocumentFullscreen(false)}
                     className="absolute top-3 right-3 z-10
@@ -497,29 +524,6 @@ function AppContent() {
                 )}
 
                 <div ref={contentTopRef} />
-
-                {hasDocumentInfo ? (
-                    <div className="relative bg-point-soft py-2 mb-4 -mx-4 -mr-6 px-4 border-b border-border/70">
-                    <button
-                      onClick={() => setDocumentFullscreen(false)}
-                        className="absolute top-1/2 right-5 -translate-y-1/2 z-10
-                                 p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title="退出全屏 (Esc)"
-                    >
-                      <Minimize2 className="h-3.5 w-3.5" />
-                    </button>
-
-                    <DocumentInfo
-                      path={currentFile}
-                      tags={tags}
-                      categories={categories}
-                      onTagClick={handleTagClick}
-                      onCategoryClick={handleCategoryClick}
-                    />
-                  </div>
-                ) : null}
 
                 <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
               </div>

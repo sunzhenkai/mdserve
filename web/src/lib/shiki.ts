@@ -1,5 +1,7 @@
 import { createHighlighter, type Highlighter } from 'shiki'
 
+export type { Highlighter }
+
 let highlighterInstance: Highlighter | null = null
 let highlighterPromise: Promise<Highlighter> | null = null
 

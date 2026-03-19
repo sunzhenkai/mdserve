@@ -275,15 +275,32 @@ body {
    Shiki 代码高亮样式
    ============================================================================ */
 
+/* Shiki 双主题变量定义 */
+:root {
+  --shiki-light: #24292f;
+  --shiki-light-bg: #f6f8fa;
+}
+
+.dark {
+  --shiki-dark: #e6edf3;
+  --shiki-dark-bg: #161b22;
+}
+
 /* Shiki 双主题支持 */
 .shiki {
   color: var(--shiki-light);
   background-color: var(--shiki-light-bg);
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
 }
 
 .dark .shiki {
   color: var(--shiki-dark);
   background-color: var(--shiki-dark-bg);
+}
+
+.prose pre .shiki,
+.prose .shiki {
+  border-radius: 0.5rem;
 }
 
 /* 如果需要，可以添加自定义的代码块样式 */

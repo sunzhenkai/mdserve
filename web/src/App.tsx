@@ -130,6 +130,7 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
+  const fileName = currentFile ? currentFile.split('/').pop() || currentFile : ''
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -145,7 +146,7 @@ function AppContent() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          {/* 点睛之色 logo：暖色系淡淡的强调 */}
+          {/* 点睛之色 logo：浅浅墨绿色淡淡的强调 */}
           <h1 className="text-xl font-bold text-point">mdserve</h1>
         </div>
         
@@ -278,31 +279,41 @@ function AppContent() {
             </div>
           ) : content ? (
             <>
-              {!documentFullscreen && hasDocumentInfo && (
-                  <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
-                    <DocumentInfo
-                      path={currentFile}
-                      tags={tags}
-                      categories={categories}
-                      onTagClick={handleTagClick}
-                      onCategoryClick={handleCategoryClick}
-                    />
-                  </div>
-                )}
               {!documentFullscreen && (
-                <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative">
-                  <button
-                    onClick={() => setDocumentFullscreen(true)}
-                    className="absolute top-3 right-3 z-10
-                               p-1.5 rounded-md bg-background/70 backdrop-blur-sm
-                               border border-border/60 hover:bg-accent hover:text-accent-foreground
-                               transition-colors cursor-pointer"
-                    title="全屏"
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </button>
+                <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
+                  {/* Title (浅边框：不与 card 边框连在一起) */}
+                  <div className="px-4 pt-3 pb-2">
+                    <div className="pb-2 border-b border-border/60">
+                      <h2 className="text-sm font-semibold truncate">{fileName}</h2>
+                    </div>
+                  </div>
 
-                  <div className="h-full overflow-y-auto p-4">
+                  {/* Meta（顶部 + 下边框分割，边框与 card 边框相连） */}
+                  {hasDocumentInfo && (
+                    <div className="px-4 py-2 border-b border-point-border bg-point-soft">
+                      <DocumentInfo
+                        path={currentFile}
+                        tags={tags}
+                        categories={categories}
+                        onTagClick={handleTagClick}
+                        onCategoryClick={handleCategoryClick}
+                      />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4 relative">
+                    <button
+                      onClick={() => setDocumentFullscreen(true)}
+                      className="absolute top-3 right-3 z-10
+                                 p-1.5 rounded-md bg-background/70 backdrop-blur-sm
+                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
+                                 transition-colors cursor-pointer"
+                      title="全屏"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </button>
+
                     <div ref={contentTopRef} />
                     <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
                   </div>
@@ -401,31 +412,39 @@ function AppContent() {
       {documentFullscreen && content && (
         <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
           <div className="h-full flex flex-col gap-4 px-4 py-4">
-            {hasDocumentInfo && (
-              <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
-                <DocumentInfo
-                  path={currentFile}
-                  tags={tags}
-                  categories={categories}
-                  onTagClick={handleTagClick}
-                  onCategoryClick={handleCategoryClick}
-                />
+            <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
+              {/* Title (浅边框：不与 card 边框连在一起) */}
+              <div className="px-4 pt-3 pb-2">
+                <div className="pb-2 border-b border-border/60">
+                  <h2 className="text-sm font-semibold truncate">{fileName}</h2>
+                </div>
               </div>
-            )}
 
-            <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative">
-              <button
-                onClick={() => setDocumentFullscreen(false)}
-                className="absolute top-3 right-3 z-10
-                           p-1.5 rounded-md bg-background/70 backdrop-blur-sm
-                           border border-border/60 hover:bg-accent hover:text-accent-foreground
-                           transition-colors cursor-pointer"
-                title="退出全屏 (Esc)"
-              >
-                <Minimize2 className="h-4 w-4" />
-              </button>
+              {/* Meta（顶部 + 下边框分割，边框与 card 边框相连） */}
+              {hasDocumentInfo && (
+                <div className="px-4 py-2 border-b border-point-border bg-point-soft">
+                  <DocumentInfo
+                    path={currentFile}
+                    tags={tags}
+                    categories={categories}
+                    onTagClick={handleTagClick}
+                    onCategoryClick={handleCategoryClick}
+                  />
+                </div>
+              )}
 
-              <div className="h-full overflow-y-auto p-4">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 relative">
+                <button
+                  onClick={() => setDocumentFullscreen(false)}
+                  className="absolute top-3 right-3 z-10
+                             p-1.5 rounded-md bg-background/70 backdrop-blur-sm
+                             border border-border/60 hover:bg-accent hover:text-accent-foreground
+                             transition-colors cursor-pointer"
+                  title="退出全屏 (Esc)"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </button>
+
                 <div ref={contentTopRef} />
                 <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
               </div>

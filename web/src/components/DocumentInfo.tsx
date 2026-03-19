@@ -10,73 +10,79 @@ interface DocumentInfoProps {
 }
 
 export function DocumentInfo({ path, tags, categories, onTagClick, onCategoryClick }: DocumentInfoProps) {
-  if (!path && tags.length === 0 && categories.length === 0) {
+  const hasAny = Boolean(path) || tags.length > 0 || categories.length > 0
+  if (!hasAny) {
     return null
   }
 
   return (
-    <div className="space-y-3 text-sm">
-      {/* 文档路径 */}
+    // meta 信息：强制单行，避免路径/分类/标签在布局里“竖排多行”
+    <div className="flex items-center gap-3 min-w-0 whitespace-nowrap text-sm">
+      {/* 路径 */}
       {path && (
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 rounded-md bg-muted p-1.5">
+        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+          <div className="rounded-md bg-muted p-1.5">
             <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">路径</p>
-            <p className="mt-0.5 truncate font-mono text-xs text-foreground/90">{path}</p>
-          </div>
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
+            路径
+          </span>
+          <span className="min-w-0 truncate font-mono text-xs text-foreground/90">{path}</span>
         </div>
       )}
 
       {/* 分类 */}
       {categories.length > 0 && (
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 rounded-md bg-muted p-1.5">
+        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+          <div className="rounded-md bg-muted p-1.5">
             <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">分类</p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
+            分类
+          </span>
+          <div className="flex items-center gap-1 min-w-0 overflow-hidden">
             {categories.map((category) => (
               <button
                 key={category}
+                type="button"
                 onClick={() => onCategoryClick?.(category)}
                 className={cn(
-                  "rounded-md border border-primary/25 bg-primary/8 px-2 py-1 text-xs font-medium text-primary",
-                  "hover:bg-primary/15 hover:border-primary/35 transition-colors cursor-pointer"
+                  'rounded-md border border-primary/25 bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-primary',
+                  'hover:bg-primary/15 hover:border-primary/35 transition-colors cursor-pointer',
+                  'truncate max-w-[120px]'
                 )}
               >
                 {category}
               </button>
             ))}
-            </div>
           </div>
         </div>
       )}
 
       {/* 标签 */}
       {tags.length > 0 && (
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 rounded-md bg-muted p-1.5">
+        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+          <div className="rounded-md bg-muted p-1.5">
             <Tag className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">标签</p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
+            标签
+          </span>
+          <div className="flex items-center gap-1 min-w-0 overflow-hidden">
             {tags.map((tag) => (
               <button
                 key={tag}
+                type="button"
                 onClick={() => onTagClick?.(tag)}
                 className={cn(
-                  "rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground",
-                  "hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                  'rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground',
+                  'hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer',
+                  'truncate max-w-[120px]'
                 )}
               >
                 #{tag}
               </button>
             ))}
-            </div>
           </div>
         </div>
       )}

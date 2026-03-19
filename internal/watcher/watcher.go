@@ -76,10 +76,15 @@ func (w *Watcher) watch() {
 				return
 			}
 
+			// Debug logging (uncomment if needed)
+			// fmt.Printf("[DEBUG] Event: %s %v\n", event.Name, event.Op)
+
 			// Handle file changes (write events for .md files)
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				if strings.HasSuffix(strings.ToLower(event.Name), ".md") {
 					w.onFileChange(event.Name)
+					// Also trigger tree change in case file was just created
+					w.onTreeChange()
 				}
 			}
 
@@ -104,10 +109,12 @@ func (w *Watcher) watch() {
 			// Handle remove and rename events
 			if event.Op&fsnotify.Remove == fsnotify.Remove ||
 				event.Op&fsnotify.Rename == fsnotify.Rename {
-				// Check if it's a directory or .md file
+				// Check if it's a .md file by name (file may not exist anymore)
+				isMdFile := strings.HasSuffix(strings.ToLower(event.Name), ".md")
+
+				// Try to check if it's a directory (may fail if file is gone)
 				info, err := os.Stat(event.Name)
 				isDir := err == nil && info.IsDir()
-				isMdFile := strings.HasSuffix(strings.ToLower(event.Name), ".md")
 
 				if isDir || isMdFile {
 					w.onTreeChange()

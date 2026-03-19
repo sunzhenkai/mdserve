@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OutlineItem } from '@/types'
-import 'highlight.js/styles/github-dark.css'
+// 代码高亮样式在 globals.css 中根据主题动态设置
 
 interface MarkdownViewerProps {
   content: string
@@ -55,7 +55,7 @@ function CodeBlock({ children, ...props }: { children: React.ReactNode; [key: st
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
       </Button>
-      <pre ref={preRef} className="!bg-slate-900 dark:!bg-slate-950 rounded-lg p-4 overflow-x-auto" {...props}>
+      <pre ref={preRef} className="rounded-lg p-4 overflow-x-auto" {...props}>
         {children}
       </pre>
     </div>
@@ -64,10 +64,14 @@ function CodeBlock({ children, ...props }: { children: React.ReactNode; [key: st
 
 export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // 使用 ref 存储 onOutlineChange，避免作为 useEffect 依赖
+  const onOutlineChangeRef = useRef(onOutlineChange)
+  onOutlineChangeRef.current = onOutlineChange
 
   // 从 DOM 中提取实际的 outline（使用 rehype-slug 生成的 id）
   useEffect(() => {
-    if (containerRef.current && onOutlineChange) {
+    if (containerRef.current && onOutlineChangeRef.current) {
       const headings = containerRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6')
       const outline: OutlineItem[] = Array.from(headings).map(heading => {
         const level = parseInt(heading.tagName.charAt(1))
@@ -75,9 +79,9 @@ export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps
         const slug = heading.id || ''
         return { level, text, slug }
       })
-      onOutlineChange(outline)
+      onOutlineChangeRef.current(outline)
     }
-  }, [content, onOutlineChange])
+  }, [content]) // 只依赖 content，不依赖 onOutlineChange
 
   // 处理锚点点击，实现平滑滚动
   useEffect(() => {

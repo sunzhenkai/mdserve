@@ -1,24 +1,46 @@
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, Monitor } from "lucide-react"
+import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 
-interface ThemeToggleProps {
-  theme: 'light' | 'dark'
-  onToggle: () => void
-}
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
 
-export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+  const cycleTheme = () => {
+    if (theme === 'light') {
+      setTheme('dark')
+    } else if (theme === 'dark') {
+      setTheme('system')
+    } else {
+      setTheme('light')
+    }
+  }
+
+  const getTitle = () => {
+    switch (theme) {
+      case 'light': return '亮色模式 (点击切换到暗色)'
+      case 'dark': return '暗色模式 (点击跟随系统)'
+      case 'system': return '跟随系统 (点击切换到亮色)'
+      default: return '切换主题'
+    }
+  }
+
+  const Icon = () => {
+    switch (theme) {
+      case 'light': return <Sun className="h-5 w-5" />
+      case 'dark': return <Moon className="h-5 w-5" />
+      case 'system': return <Monitor className="h-5 w-5" />
+      default: return <Monitor className="h-5 w-5" />
+    }
+  }
+
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={onToggle}
-      title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
+      onClick={cycleTheme}
+      title={getTitle()}
     >
-      {theme === 'light' ? (
-        <Moon className="h-5 w-5" />
-      ) : (
-        <Sun className="h-5 w-5" />
-      )}
+      <Icon />
     </Button>
   )
 }

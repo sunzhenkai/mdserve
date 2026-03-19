@@ -184,8 +184,10 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-2xl max-h-[80vh] p-0 gap-0 overflow-hidden shadow-2xl flex flex-col"
+        className="sm:max-w-2xl w-[90vw] max-h-[70vh] p-0 gap-0 overflow-hidden shadow-2xl flex flex-col bg-background rounded-xl"
         hideClose
+        // 覆盖默认的黑色遮罩层，使用更浅的遮罩
+        overlayClassName="bg-black/40 backdrop-blur-sm"
       >
         {/* 搜索输入框 - VS Code 风格 - 固定在顶部 */}
         <div className="flex items-center px-4 py-3 border-b border-border bg-background flex-shrink-0">
@@ -222,10 +224,10 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
           )}
         </div>
 
-        {/* 搜索结果 / 历史记录 - 中间可滚动区域 */}
+        {/* 搜索结果 / 历史记录 - 中间可滚动区域，固定高度 */}
         <div 
           ref={resultsRef}
-          className="flex-1 min-h-0 overflow-y-auto"
+          className="flex-1 min-h-0 overflow-y-auto max-h-[50vh]"
         >
           {/* 搜索历史 */}
           {showHistory && !query && history.length > 0 && (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
@@ -6,12 +6,11 @@ import { Outline } from './components/Outline'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TagsModal } from './components/TagsModal'
 import { DocumentInfo } from './components/DocumentInfo'
-import { NavigationMenu } from './components/NavigationMenu'
+import { NavigationMenuWrapper } from './components/NavigationMenu'
 import { SearchModal } from './components/SearchModal'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
 import { useWebSocket } from './hooks/useWebSocket'
-import { useTheme } from './hooks/useTheme'
 import { FileInfo, OutlineItem, MenuItem } from './types'
 
 function App() {
@@ -44,7 +43,6 @@ function App() {
   const [tagsModalTab, setTagsModalTab] = useState<'tags' | 'categories' | undefined>(undefined)
   const [tagsModalSelected, setTagsModalSelected] = useState<string | undefined>(undefined)
   
-  const { theme, toggleTheme } = useTheme()
   const wsMessage = useWebSocket('/ws')
 
   // 全局快捷键 Ctrl/Cmd+K 打开搜索
@@ -160,9 +158,10 @@ function App() {
   }
 
   // 处理前端生成的 outline（从 DOM 中提取，确保 id 匹配）
-  const handleOutlineChange = (newOutline: OutlineItem[]) => {
+  // 使用 useCallback 避免不必要的重新渲染
+  const handleOutlineChange = useCallback((newOutline: OutlineItem[]) => {
     setOutline(newOutline)
-  }
+  }, [])
 
   // 处理标签点击
   const handleTagClick = (tag: string) => {
@@ -179,7 +178,7 @@ function App() {
   }
 
   return (
-    <div className={`h-screen flex flex-col ${theme}`}>
+    <div className="h-screen flex flex-col">
       {/* Header */}
       <header className="h-14 flex items-center justify-between px-4 border-b border-border bg-card flex-shrink-0">
         {/* Left: Menu button (mobile) + Logo */}
@@ -197,7 +196,7 @@ function App() {
         
         {/* Center: Navigation Menu */}
         <div className="flex-1 flex justify-center">
-          <NavigationMenu 
+          <NavigationMenuWrapper
             items={menuItems}
             onFileSelect={handleFileSelect}
             onTagSelect={handleTagClick}
@@ -242,7 +241,7 @@ function App() {
             </Button>
           )}
           
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <ThemeToggle />
         </div>
       </header>
       

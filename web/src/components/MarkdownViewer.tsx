@@ -1,12 +1,12 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
+import rehypeShiki from '@shikijs/rehype'
 import { useEffect, useState, useRef } from 'react'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OutlineItem } from '@/types'
-// 代码高亮样式在 globals.css 中根据主题动态设置
+import { getHighlighter } from '@/lib/shiki'
 
 interface MarkdownViewerProps {
   content: string
@@ -49,13 +49,17 @@ function CodeBlock({ children, ...props }: { children: React.ReactNode; [key: st
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
         onClick={handleCopy}
         title={copied ? '已复制' : '复制代码'}
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
       </Button>
-      <pre ref={preRef} className="rounded-lg p-4 overflow-x-auto" {...props}>
+      <pre 
+        ref={preRef} 
+        className="!p-4 !m-0 rounded-lg overflow-x-auto bg-[#f6f8fa] dark:bg-[#161b22] shiki" 
+        {...props}
+      >
         {children}
       </pre>
     </div>
@@ -107,11 +111,38 @@ export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps
     <div ref={containerRef} className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight, rehypeSlug]}
+        rehypePlugins={[
+          rehypeSlug,
+          [rehypeShiki, {
+            getHighlighter,
+            themes: {
+              light: 'github-light',
+              dark: 'github-dark',
+            },
+            defaultColor: false, // 使用 CSS 变量，支持主题切换
+          }]
+        ]}
         components={{
           // 为代码块添加复制按钮
           pre: ({ children }) => {
             return <CodeBlock>{children}</CodeBlock>
+          },
+          // 修复行内代码显示问题：明确区分行内代码和代码块
+          code: ({ className, children, ...props }) => {
+            // 如果有 className（通常是 language-xxx），说明是代码块
+            const isCodeBlock = className && /language-/.test(className)
+            
+            if (isCodeBlock) {
+              // 代码块由 Shiki 处理，直接渲染
+              return <code className={className} {...props}>{children}</code>
+            }
+            
+            // 行内代码：添加特定样式类
+            return (
+              <code className="inline-code" {...props}>
+                {children}
+              </code>
+            )
           },
           // 处理图片
           img: ({ src, alt }) => {

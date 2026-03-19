@@ -226,20 +226,20 @@ body {
 /* ============================================================================
    Markdown 样式
    ============================================================================ */
-.markdown-viewer {
-  @apply prose prose-slate dark:prose-invert max-w-none;
-}
 
-/* 行内代码样式 - 只针对不在 pre 内的 code */
+/* 行内代码样式 */
+.inline-code,
 .prose :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
   border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   background-color: oklch(0.95 0 0);
   color: #d73a49;
 }
 
+.dark .inline-code,
 .dark .prose :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
   background-color: oklch(0.25 0 0);
   color: #ff7b72;
@@ -249,6 +249,7 @@ body {
 .prose pre {
   padding: 0;
   background: transparent;
+  margin: 0;
 }
 
 .prose pre code {
@@ -271,191 +272,21 @@ body {
 }
 
 /* ============================================================================
-   代码块语法高亮样式
+   Shiki 代码高亮样式
    ============================================================================ */
 
-/* 亮色模式 - GitHub 风格 */
-.hljs {
-  color: #24292e;
-  background: #f6f8fa;
+/* Shiki 双主题支持 */
+.shiki {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
 }
 
-.hljs-doctag,
-.hljs-keyword,
-.hljs-meta .hljs-keyword,
-.hljs-template-tag,
-.hljs-template-variable,
-.hljs-type,
-.hljs-variable.language_ {
-  color: #d73a49;
+.dark .shiki {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
 }
 
-.hljs-title,
-.hljs-title.class_,
-.hljs-title.class_.inherited__,
-.hljs-title.function_ {
-  color: #6f42c1;
-}
-
-.hljs-attr,
-.hljs-attribute,
-.hljs-literal,
-.hljs-meta,
-.hljs-number,
-.hljs-operator,
-.hljs-variable,
-.hljs-selector-attr,
-.hljs-selector-class,
-.hljs-selector-id {
-  color: #005cc5;
-}
-
-.hljs-regexp,
-.hljs-string,
-.hljs-meta .hljs-string {
-  color: #032f62;
-}
-
-.hljs-built_in,
-.hljs-symbol {
-  color: #e36209;
-}
-
-.hljs-comment,
-.hljs-code,
-.hljs-formula {
-  color: #6a737d;
-}
-
-.hljs-name,
-.hljs-quote,
-.hljs-selector-tag,
-.hljs-selector-pseudo {
-  color: #22863a;
-}
-
-.hljs-subst {
-  color: #24292e;
-}
-
-.hljs-section {
-  color: #005cc5;
-  font-weight: bold;
-}
-
-.hljs-bullet {
-  color: #735c0f;
-}
-
-.hljs-emphasis {
-  color: #24292e;
-  font-style: italic;
-}
-
-.hljs-strong {
-  color: #24292e;
-  font-weight: bold;
-}
-
-.hljs-addition {
-  color: #22863a;
-  background-color: #f0fff4;
-}
-
-.hljs-deletion {
-  color: #b31d28;
-  background-color: #ffeef0;
-}
-
-/* 暗色模式 - GitHub Dark 风格 */
-.dark .hljs {
-  color: #c9d1d9;
-  background: #161b22;
-}
-
-.dark .hljs-doctag,
-.dark .hljs-keyword,
-.dark .hljs-meta .hljs-keyword,
-.dark .hljs-template-tag,
-.dark .hljs-template-variable,
-.dark .hljs-type,
-.dark .hljs-variable.language_ {
-  color: #ff7b72;
-}
-
-.dark .hljs-title,
-.dark .hljs-title.class_,
-.dark .hljs-title.class_.inherited__,
-.dark .hljs-title.function_ {
-  color: #d2a8ff;
-}
-
-.dark .hljs-attr,
-.dark .hljs-attribute,
-.dark .hljs-literal,
-.dark .hljs-meta,
-.dark .hljs-number,
-.dark .hljs-operator,
-.dark .hljs-variable,
-.dark .hljs-selector-attr,
-.dark .hljs-selector-class,
-.dark .hljs-selector-id {
-  color: #79c0ff;
-}
-
-.dark .hljs-regexp,
-.dark .hljs-string,
-.dark .hljs-meta .hljs-string {
-  color: #a5d6ff;
-}
-
-.dark .hljs-built_in,
-.dark .hljs-symbol {
-  color: #ffa657;
-}
-
-.dark .hljs-comment,
-.dark .hljs-code,
-.dark .hljs-formula {
-  color: #8b949e;
-}
-
-.dark .hljs-name,
-.dark .hljs-quote,
-.dark .hljs-selector-tag,
-.dark .hljs-selector-pseudo {
-  color: #7ee787;
-}
-
-.dark .hljs-subst {
-  color: #c9d1d9;
-}
-
-.dark .hljs-section {
-  color: #79c0ff;
-  font-weight: bold;
-}
-
-.dark .hljs-bullet {
-  color: #d2a8ff;
-}
-
-.dark .hljs-emphasis {
-  color: #c9d1d9;
-  font-style: italic;
-}
-
-.dark .hljs-strong {
-  color: #c9d1d9;
-  font-weight: bold;
-}
-
-.dark .hljs-addition {
-  color: #aff5b4;
-  background-color: #033a16;
-}
-
-.dark .hljs-deletion {
-  color: #ffdcd7;
-  background-color: #67060c;
+/* 如果需要，可以添加自定义的代码块样式 */
+.shiki code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }

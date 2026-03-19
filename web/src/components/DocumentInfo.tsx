@@ -24,9 +24,6 @@ export function DocumentInfo({ path, tags, categories, onTagClick, onCategoryCli
           <div className="rounded-md bg-muted p-1.5">
             <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
-            路径
-          </span>
           <span className="min-w-0 truncate font-mono text-xs text-foreground/90">{path}</span>
         </div>
       )}
@@ -37,9 +34,6 @@ export function DocumentInfo({ path, tags, categories, onTagClick, onCategoryCli
           <div className="rounded-md bg-muted p-1.5">
             <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
-            分类
-          </span>
           <div className="flex items-center gap-1 min-w-0 overflow-hidden">
             {categories.map((category) => (
               <button
@@ -65,9 +59,6 @@ export function DocumentInfo({ path, tags, categories, onTagClick, onCategoryCli
           <div className="rounded-md bg-muted p-1.5">
             <Tag className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground flex-shrink-0">
-            标签
-          </span>
           <div className="flex items-center gap-1 min-w-0 overflow-hidden">
             {tags.map((tag) => (
               <button

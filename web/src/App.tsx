@@ -130,20 +130,6 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
-  const canToggleOutline = outline.length > 0
-  const allPanelsHidden = sidebarCollapsed && (!canToggleOutline || outlineCollapsed)
-
-  const handleTogglePanels = () => {
-    const shouldShow = allPanelsHidden
-
-    if (shouldShow) {
-      setSidebarCollapsed(false)
-      if (canToggleOutline) setOutlineCollapsed(false)
-    } else {
-      setSidebarCollapsed(true)
-      if (canToggleOutline) setOutlineCollapsed(true)
-    }
-  }
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -211,21 +197,6 @@ function AppContent() {
           )}
           
           <ThemeToggle />
-
-          {/* Desktop: combined panels toggle (full hide/show) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex"
-            onClick={handleTogglePanels}
-            title={allPanelsHidden ? '显示文档目录和大纲' : '隐藏文档目录和大纲'}
-          >
-            {allPanelsHidden ? (
-              <Maximize2 className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <Minimize2 className="h-5 w-5 text-muted-foreground" />
-            )}
-          </Button>
         </div>
       </header>
       
@@ -293,7 +264,7 @@ function AppContent() {
                     <div ref={contentTopRef} />
 
                     {hasDocumentInfo && (
-                      <div className="bg-point-soft py-2 -mx-4 px-4 pr-10">
+                      <div className="bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10">
                         <DocumentInfo
                           path={currentFile}
                           tags={tags}
@@ -417,7 +388,7 @@ function AppContent() {
                 <div ref={contentTopRef} />
 
                 {hasDocumentInfo && (
-                  <div className="bg-point-soft py-2 -mx-4 px-4 pr-10">
+                  <div className="bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10">
                     <DocumentInfo
                       path={currentFile}
                       tags={tags}

@@ -77,8 +77,8 @@ export function TagsModal({
           className="flex-1 flex flex-col min-h-0"
         >
           {/* modal header: 标题 + 分类/标签切换 */}
-          <div className="flex flex-col flex-shrink-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+          <div className="flex flex-col flex-shrink-0 border-b border-border bg-background">
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-base font-semibold leading-none">标签和分类</h2>
@@ -92,7 +92,7 @@ export function TagsModal({
               </button>
             </div>
 
-            <TabsList className="grid w-full grid-cols-2 px-4 gap-1 bg-transparent">
+            <TabsList className="grid w-full grid-cols-2 px-4 pb-3 gap-1 bg-transparent">
               <TabsTrigger value="categories" className="flex items-center gap-1 text-xs px-2 py-1">
                 <Folder className="h-4 w-4" />
                 分类 ({categoriesList.length})

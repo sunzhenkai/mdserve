@@ -71,43 +71,46 @@ export function TagsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <ModalShell className="max-h-[80vh]" hideClose>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-base font-semibold leading-none">标签和分类</h2>
-          </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
-            title="关闭"
-          >
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </div>
-
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
           className="flex-1 flex flex-col overflow-hidden"
         >
-          <TabsList className="grid w-full grid-cols-2 px-2 gap-1">
-            <TabsTrigger value="tags" className="flex items-center gap-1 text-xs px-2 py-1">
-              <Tag className="h-4 w-4" />
-              标签 ({tagsList.length})
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-1 text-xs px-2 py-1">
-              <Folder className="h-4 w-4" />
-              分类 ({categoriesList.length})
-            </TabsTrigger>
-          </TabsList>
+          {/* modal header: 标题 + 分类/标签切换 */}
+          <div className="flex flex-col flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-base font-semibold leading-none">标签和分类</h2>
+              </div>
+              <button
+                onClick={() => onOpenChange(false)}
+                className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
+                title="关闭"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
 
-          <TabsContent value="tags" className="flex-1 overflow-hidden mt-3 px-4">
+            <TabsList className="grid w-full grid-cols-2 px-4 gap-1 bg-transparent">
+              <TabsTrigger value="categories" className="flex items-center gap-1 text-xs px-2 py-1">
+                <Folder className="h-4 w-4" />
+                分类 ({categoriesList.length})
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="flex items-center gap-1 text-xs px-2 py-1">
+                <Tag className="h-4 w-4" />
+                标签 ({tagsList.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="tags" className="flex-1 min-h-0 overflow-hidden px-4 mt-0">
             {tagsList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无标签
               </div>
             ) : (
-              <div className="flex flex-1 overflow-hidden h-full">
+              <div className="flex flex-1 overflow-hidden h-full min-h-0">
                 <ItemPanel
                   items={tagsList}
                   currentItems={currentTags}
@@ -121,13 +124,16 @@ export function TagsModal({
             )}
           </TabsContent>
 
-          <TabsContent value="categories" className="flex-1 overflow-hidden mt-3 px-4">
+          <TabsContent
+            value="categories"
+            className="flex-1 min-h-0 overflow-hidden px-4 mt-0"
+          >
             {categoriesList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无分类
               </div>
             ) : (
-              <div className="flex flex-1 overflow-hidden h-full">
+              <div className="flex flex-1 overflow-hidden h-full min-h-0">
                 <ItemPanel
                   items={categoriesList}
                   currentItems={currentCategories}
@@ -180,9 +186,9 @@ function ItemPanel({
   onFileClick 
 }: ItemPanelProps) {
   return (
-    <div className="flex flex-col flex-1 overflow-hidden h-full">
+    <div className="flex flex-col flex-1 overflow-hidden h-full min-h-0">
       {/* 上：标签/分类列表 */}
-      <div className="flex-shrink-0 min-h-[160px] max-h-[40%] overflow-y-auto pr-2">
+      <div className="flex-shrink-0 min-h-[140px] max-h-[240px] overflow-y-auto pr-2">
         <div className="flex flex-wrap gap-2 py-2">
           {items.map(([item, docs]) => {
             const isCurrent = currentItems.includes(item)
@@ -222,7 +228,7 @@ function ItemPanel({
       </div>
 
       {/* 下：关联文档列表 */}
-      <div className="flex-1 overflow-y-auto border-t border-border/50 pt-3">
+      <div className="flex-1 min-h-0 overflow-y-auto border-t border-border/50 pt-3">
         {selectedItem ? (
           <div>
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-2">

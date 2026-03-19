@@ -130,7 +130,20 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
-  const fileName = currentFile ? currentFile.split('/').pop() || currentFile : ''
+  const canToggleOutline = outline.length > 0
+  const allPanelsHidden = sidebarCollapsed && (!canToggleOutline || outlineCollapsed)
+
+  const handleTogglePanels = () => {
+    const shouldShow = allPanelsHidden
+
+    if (shouldShow) {
+      setSidebarCollapsed(false)
+      if (canToggleOutline) setOutlineCollapsed(false)
+    } else {
+      setSidebarCollapsed(true)
+      if (canToggleOutline) setOutlineCollapsed(true)
+    }
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -172,38 +185,6 @@ function AppContent() {
           >
             <Search className="h-5 w-5" />
           </Button>
-
-          {/* Desktop: directory toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? '展开文档目录' : '收起文档目录'}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronLeft className="h-5 w-5 text-muted-foreground" />
-            )}
-          </Button>
-
-          {/* Desktop: outline toggle */}
-          {outline.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden lg:flex"
-              onClick={() => setOutlineCollapsed(!outlineCollapsed)}
-              title={outlineCollapsed ? '展开目录' : '收起目录'}
-            >
-              {outlineCollapsed ? (
-                <ChevronLeft className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              )}
-            </Button>
-          )}
           
           {/* Outline button (mobile) */}
           {outline.length > 0 && (
@@ -230,6 +211,21 @@ function AppContent() {
           )}
           
           <ThemeToggle />
+
+          {/* Desktop: combined panels toggle (full hide/show) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex"
+            onClick={handleTogglePanels}
+            title={allPanelsHidden ? '显示文档目录和大纲' : '隐藏文档目录和大纲'}
+          >
+            {allPanelsHidden ? (
+              <Maximize2 className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <Minimize2 className="h-5 w-5 text-muted-foreground" />
+            )}
+          </Button>
         </div>
       </header>
       
@@ -281,28 +277,8 @@ function AppContent() {
             <>
               {!documentFullscreen && (
                 <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
-                  {/* Title (浅边框：不与 card 边框连在一起) */}
-                  <div className="px-4 pt-3 pb-2">
-                    <div className="pb-2 border-b border-border/60">
-                      <h2 className="text-sm font-semibold truncate">{fileName}</h2>
-                    </div>
-                  </div>
-
-                  {/* Meta（顶部 + 下边框分割，边框与 card 边框相连） */}
-                  {hasDocumentInfo && (
-                    <div className="px-4 py-2 border-b border-point-border bg-point-soft">
-                      <DocumentInfo
-                        path={currentFile}
-                        tags={tags}
-                        categories={categories}
-                        onTagClick={handleTagClick}
-                        onCategoryClick={handleCategoryClick}
-                      />
-                    </div>
-                  )}
-
                   {/* Content */}
-                  <div className="flex-1 min-h-0 overflow-y-auto p-4 relative">
+                  <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative">
                     <button
                       onClick={() => setDocumentFullscreen(true)}
                       className="absolute top-3 right-3 z-10
@@ -315,6 +291,19 @@ function AppContent() {
                     </button>
 
                     <div ref={contentTopRef} />
+
+                    {hasDocumentInfo && (
+                      <div className="bg-point-soft py-2 pr-10">
+                        <DocumentInfo
+                          path={currentFile}
+                          tags={tags}
+                          categories={categories}
+                          onTagClick={handleTagClick}
+                          onCategoryClick={handleCategoryClick}
+                        />
+                      </div>
+                    )}
+
                     <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
                   </div>
                 </div>
@@ -330,7 +319,7 @@ function AppContent() {
         {/* Desktop Outline */}
         {outline.length > 0 && (
           !outlineCollapsed ? (
-            <aside className="hidden lg:flex w-[clamp(240px,22vw,320px)] h-full relative">
+            <aside className="hidden lg:flex w-72 h-full relative">
               <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
                 <div className="h-full flex flex-col">
                   <Outline items={outline} />
@@ -413,27 +402,7 @@ function AppContent() {
         <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
           <div className="h-full flex flex-col gap-4 px-4 py-4">
             <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
-              {/* Title (浅边框：不与 card 边框连在一起) */}
-              <div className="px-4 pt-3 pb-2">
-                <div className="pb-2 border-b border-border/60">
-                  <h2 className="text-sm font-semibold truncate">{fileName}</h2>
-                </div>
-              </div>
-
-              {/* Meta（顶部 + 下边框分割，边框与 card 边框相连） */}
-              {hasDocumentInfo && (
-                <div className="px-4 py-2 border-b border-point-border bg-point-soft">
-                  <DocumentInfo
-                    path={currentFile}
-                    tags={tags}
-                    categories={categories}
-                    onTagClick={handleTagClick}
-                    onCategoryClick={handleCategoryClick}
-                  />
-                </div>
-              )}
-
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 relative">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative">
                 <button
                   onClick={() => setDocumentFullscreen(false)}
                   className="absolute top-3 right-3 z-10
@@ -446,6 +415,19 @@ function AppContent() {
                 </button>
 
                 <div ref={contentTopRef} />
+
+                {hasDocumentInfo && (
+                  <div className="bg-point-soft py-2 pr-10">
+                    <DocumentInfo
+                      path={currentFile}
+                      tags={tags}
+                      categories={categories}
+                      onTagClick={handleTagClick}
+                      onCategoryClick={handleCategoryClick}
+                    />
+                  </div>
+                )}
+
                 <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
               </div>
             </div>

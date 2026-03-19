@@ -297,7 +297,7 @@ function AppContent() {
                   onClick={() => setSidebarCollapsed(true)}
                   title="收起文件列表"
                 >
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                  <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>
             </aside>
@@ -311,7 +311,7 @@ function AppContent() {
                 onClick={() => setSidebarCollapsed(false)}
                 title="展开文件列表"
               >
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
           </>
@@ -337,12 +337,12 @@ function AppContent() {
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar mdserve-scrollbar-hidden"
+                    className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
                   >
                     <div ref={contentTopRef} />
 
                     {hasDocumentInfo ? (
-                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70">
+                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 border-b border-border/70">
                         <button
                           onClick={() => setDocumentFullscreen(true)}
                           className="absolute top-1/2 right-3 -translate-y-1/2 z-10
@@ -407,7 +407,7 @@ function AppContent() {
                   onClick={() => setOutlineCollapsed(true)}
                   title="收起目录"
                 >
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>
             </aside>
@@ -421,7 +421,7 @@ function AppContent() {
                 onClick={() => setOutlineCollapsed(false)}
                 title="展开目录"
               >
-                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
           </>
@@ -481,7 +481,7 @@ function AppContent() {
             <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
               <div
                 ref={fullscreenScrollRef}
-                className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar mdserve-scrollbar-hidden"
+                className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative mdserve-scrollbar-hidden"
               >
                 {hasDocumentInfo ? null : (
                   <button
@@ -499,7 +499,7 @@ function AppContent() {
                 <div ref={contentTopRef} />
 
                 {hasDocumentInfo ? (
-                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70">
+                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 border-b border-border/70">
                     <button
                       onClick={() => setDocumentFullscreen(false)}
                       className="absolute top-1/2 right-3 -translate-y-1/2 z-10

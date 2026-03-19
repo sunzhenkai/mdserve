@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus } from 'lucide-react'
+import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus, Target } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -223,12 +223,12 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
           {selectedPath && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleLocate}
-              className="h-6 px-2 text-xs"
+              className="h-6 w-6"
               title="定位当前文档在文档树中的位置"
             >
-              定位
+              <Target className="h-3.5 w-3.5" />
             </Button>
           )}
           <Button

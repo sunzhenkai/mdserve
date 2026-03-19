@@ -306,7 +306,7 @@ function AppContent() {
               <button
                 className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50
                            w-4 h-11 items-center justify-center
-                           bg-card border border-border rounded-l-md shadow-sm
+                           bg-card border border-border rounded-r-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
                 onClick={() => setSidebarCollapsed(false)}
                 title="展开文件列表"
@@ -416,7 +416,7 @@ function AppContent() {
               <button
                 className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-50
                            w-4 h-11 items-center justify-center
-                           bg-card border border-border rounded-r-md shadow-sm
+                           bg-card border border-border rounded-l-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
                 onClick={() => setOutlineCollapsed(false)}
                 title="展开目录"

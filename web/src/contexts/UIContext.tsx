@@ -30,9 +30,37 @@ type UIContextValue = UIState & UIActions
 
 const UIContext = createContext<UIContextValue | null>(null)
 
+const LS_SIDEBAR_COLLAPSED = 'mdserve-sidebar-collapsed'
+const LS_OUTLINE_COLLAPSED = 'mdserve-outline-collapsed'
+
+function readBoolFromLocalStorage(key: string, fallback: boolean): boolean {
+  try {
+    if (typeof window === 'undefined') return fallback
+    const raw = window.localStorage.getItem(key)
+    if (raw === null) return fallback
+    return raw === '1'
+  } catch {
+    return fallback
+  }
+}
+
+function writeBoolToLocalStorage(key: string, value: boolean) {
+  try {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(key, value ? '1' : '0')
+  } catch {
+    // ignore: localStorage might be unavailable (private mode / quota / browser restrictions)
+  }
+}
+
 export function UIProvider({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [outlineCollapsed, setOutlineCollapsed] = useState(false)
+  // 默认：文档目录折叠；大纲不折叠（保持默认全展开体验）
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() =>
+    readBoolFromLocalStorage(LS_SIDEBAR_COLLAPSED, true),
+  )
+  const [outlineCollapsed, setOutlineCollapsed] = useState<boolean>(() =>
+    readBoolFromLocalStorage(LS_OUTLINE_COLLAPSED, false),
+  )
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -76,6 +104,15 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     setTagsModalOpen,
     openTagsModal,
   }
+
+  // 持久化“隐藏/展示”状态（仅桌面端折叠条）
+  useEffect(() => {
+    writeBoolToLocalStorage(LS_SIDEBAR_COLLAPSED, sidebarCollapsed)
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    writeBoolToLocalStorage(LS_OUTLINE_COLLAPSED, outlineCollapsed)
+  }, [outlineCollapsed])
 
   return (
     <UIContext.Provider value={value}>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, ListPlus, ListMinus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -69,7 +69,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
     <div>
       <div
         className={cn(
-          "flex items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group",
+          "flex items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group min-w-0",
           levelClass === 1 && "font-medium",
           levelClass >= 3 && "text-xs",
           levelClass >= 4 && "text-xs opacity-80"
@@ -91,7 +91,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
           <span className="w-4 h-4" />
         )}
         <span
-          className="text-sm truncate flex-1"
+          className="min-w-0 flex-1 text-sm whitespace-nowrap overflow-x-auto mdserve-scrollbar-hidden"
           onClick={handleClick}
         >
           {node.item.text}
@@ -134,11 +134,21 @@ export function Outline({ items }: OutlineProps) {
     return slugs
   }, [tree])
 
+  // 使用稳定的字符串 key 追踪“目录结构变化”，以便切换文档后默认全展开
+  const allExpandableSlugsKey = useMemo(() => {
+    return Array.from(allExpandableSlugs).sort().join('|')
+  }, [allExpandableSlugs])
+
   // 展开状态
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => {
     // 默认全部展开
     return new Set(allExpandableSlugs)
   })
+
+  useEffect(() => {
+    // 目录结构变化时重置为“全部展开”，避免切换文档后保留上一个文档的展开状态
+    setExpandedItems(new Set(allExpandableSlugs))
+  }, [allExpandableSlugsKey])
 
   // 切换单个项目
   const toggleExpand = (slug: string) => {

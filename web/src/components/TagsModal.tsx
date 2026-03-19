@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Tag, Folder, FileText, Star } from 'lucide-react'
+import { Dialog } from '@/components/ui/dialog'
+import { Tag, Folder, FileText, Star, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ModalShell } from '@/components/common/ModalShell'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 
 interface TagsModalProps {
   open: boolean
@@ -51,6 +55,10 @@ export function TagsModal({
     ? (activeTab === 'tags' ? allTags[selectedItem] : allCategories[selectedItem]) || []
     : []
 
+  const activeItemsList = activeTab === 'tags' ? tagsList : categoriesList
+  const activeCurrentItems = activeTab === 'tags' ? currentTags : currentCategories
+  const emptyText = activeTab === 'tags' ? '暂无标签' : '暂无分类'
+
   const handleItemClick = (item: string) => {
     setSelectedItem(selectedItem === item ? null : item)
   }
@@ -60,182 +68,222 @@ export function TagsModal({
     onOpenChange(false)
   }
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value as TabType)
+  const handleTabChange = (value: TabType) => {
+    setActiveTab(value)
     setSelectedItem(null)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>标签和分类</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="tags" className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              标签 ({tagsList.length})
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-2">
-              <Folder className="h-4 w-4" />
-              分类 ({categoriesList.length})
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="tags" className="flex-1 overflow-hidden mt-4">
-            {tagsList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无标签
-              </div>
-            ) : (
-              <div className="flex flex-1 overflow-hidden gap-4 h-full">
-                <ItemPanel
-                  items={tagsList}
-                  currentItems={currentTags}
-                  selectedItem={selectedItem}
-                  selectedDocs={selectedDocs}
-                  onItemClick={handleItemClick}
-                  onFileClick={handleFileClick}
-                  type="tags"
-                />
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="categories" className="flex-1 overflow-hidden mt-4">
-            {categoriesList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无分类
-              </div>
-            ) : (
-              <div className="flex flex-1 overflow-hidden gap-4 h-full">
-                <ItemPanel
-                  items={categoriesList}
-                  currentItems={currentCategories}
-                  selectedItem={selectedItem}
-                  selectedDocs={selectedDocs}
-                  onItemClick={handleItemClick}
-                  onFileClick={handleFileClick}
-                  type="categories"
-                />
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        {/* 图例说明 */}
-        {(tagsList.length > 0 || categoriesList.length > 0) && (
-          <div className="flex items-center gap-4 pt-2 border-t border-border text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Star className="h-3 w-3 fill-primary text-primary" />
-              <span>当前文档的{activeTab === 'tags' ? '标签' : '分类'}</span>
+      <ModalShell className="max-h-[80vh]" hideClose>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => handleTabChange(value as TabType)}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          {/* modal header：标题 + 分类/标签切换 同一行 */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-background flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-base font-semibold leading-none truncate">标签和分类</h2>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs opacity-70">(n)</span>
-              <span>关联文档数量</span>
+
+            <div className="flex-1 flex justify-end min-w-0">
+              <TabsList className="w-fit flex items-center gap-1 bg-transparent h-auto p-0 rounded-none border-0 text-muted-foreground">
+                <TabsTrigger
+                  value="categories"
+                  className={cn(
+                    'flex items-center justify-start gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                    'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60',
+                    'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-sm'
+                  )}
+                >
+                  <Folder className="h-4 w-4" />
+                  分类
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="tags"
+                  className={cn(
+                    'flex items-center justify-start gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                    'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60',
+                    'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-sm'
+                  )}
+                >
+                  <Tag className="h-4 w-4" />
+                  标签
+                </TabsTrigger>
+              </TabsList>
             </div>
+
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
+              title="关闭"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
-        )}
-      </DialogContent>
+
+          <Separator className="bg-border flex-shrink-0" />
+
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
+            {activeItemsList.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">{emptyText}</div>
+            ) : selectedItem ? (
+              <SelectedDocsPanel
+                selectedItem={selectedItem}
+                currentItems={activeCurrentItems}
+                selectedDocs={selectedDocs}
+                onItemClick={handleItemClick}
+                onFileClick={handleFileClick}
+              />
+            ) : (
+              <ItemListPanel
+                items={activeItemsList}
+                currentItems={activeCurrentItems}
+                selectedItem={selectedItem}
+                onItemClick={handleItemClick}
+              />
+            )}
+          </div>
+        </Tabs>
+      </ModalShell>
     </Dialog>
   )
 }
 
-// 抽取的列表面板组件
-interface ItemPanelProps {
+// 列表面板：标签/分类列表（未选中时展示）
+interface ItemListPanelProps {
   items: [string, string[]][]
   currentItems: string[]
   selectedItem: string | null
+  onItemClick: (item: string) => void
+}
+
+function ItemListPanel({
+  items,
+  currentItems,
+  selectedItem,
+  onItemClick,
+}: ItemListPanelProps) {
+  return (
+    <div className="py-2">
+      <div className="flex flex-wrap gap-2">
+        {items.map(([item, docs]) => {
+          const isCurrent = currentItems.includes(item)
+          const isSelected = selectedItem === item
+
+          return (
+            <Badge
+              key={item}
+              variant={isSelected ? 'default' : isCurrent ? 'secondary' : 'outline'}
+              className="cursor-pointer"
+            >
+              <button
+                type="button"
+                onClick={() => onItemClick(item)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full bg-transparent border-0 p-0',
+                  'focus:outline-none'
+                )}
+              >
+                {isCurrent && <Star className="h-3.5 w-3.5 fill-current" />}
+                <span className="leading-none">{item}</span>
+                <span
+                  className={cn(
+                    'rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-none',
+                    isSelected
+                      ? 'border-primary/30 bg-background/60 text-primary-foreground'
+                      : 'border-border bg-background/60 text-muted-foreground'
+                  )}
+                >
+                  {docs.length}
+                </span>
+              </button>
+            </Badge>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// 选中面板：隐藏标签/分类列表，仅展示选中项与关联文档
+interface SelectedDocsPanelProps {
+  selectedItem: string
+  currentItems: string[]
   selectedDocs: string[]
   onItemClick: (item: string) => void
   onFileClick: (path: string) => void
-  type: 'tags' | 'categories'
 }
 
-function ItemPanel({ 
-  items, 
-  currentItems, 
-  selectedItem, 
-  selectedDocs, 
-  onItemClick, 
-  onFileClick 
-}: ItemPanelProps) {
+function SelectedDocsPanel({
+  selectedItem,
+  currentItems,
+  selectedDocs,
+  onItemClick,
+  onFileClick,
+}: SelectedDocsPanelProps) {
+  const isCurrent = currentItems.includes(selectedItem)
+
   return (
-    <>
-      {/* 左侧：标签/分类列表 */}
-      <div className="flex-1 overflow-y-auto pr-2">
-        <div className="flex flex-wrap gap-2 py-2">
-          {items.map(([item, docs]) => {
-            const isCurrent = currentItems.includes(item)
-            const isSelected = selectedItem === item
-            
+    <div className="pt-2">
+      <div className="flex flex-wrap items-center gap-2 pb-2">
+        <Badge variant="default" className="cursor-pointer">
+          <button
+            type="button"
+            onClick={() => onItemClick(selectedItem)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full bg-transparent border-0 p-0',
+              'focus:outline-none'
+            )}
+          >
+            {isCurrent && <Star className="h-3.5 w-3.5 fill-current" />}
+            <span className="leading-none">{selectedItem}</span>
+            <span className="rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-none border-primary/30 bg-background/60 text-primary-foreground">
+              {selectedDocs.length}
+            </span>
+          </button>
+        </Badge>
+      </div>
+
+      <Separator className="bg-border/50" />
+
+      <div className="pt-3">
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-2">
+          <h4 className="px-1 text-sm font-medium text-muted-foreground mb-1">
+            &quot;{selectedItem}&quot; 的关联文档 ({selectedDocs.length})
+          </h4>
+        </div>
+
+        <div className="space-y-1 pr-2 pb-3">
+          {selectedDocs.map((doc) => {
+            const fileName = doc.split('/').pop() || doc
             return (
-              <button
-                key={item}
-                onClick={() => onItemClick(item)}
+              <Button
+                key={doc}
+                variant="ghost"
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
-                  isCurrent && "ring-2 ring-primary",
-                  isSelected 
-                    ? "bg-primary text-primary-foreground" 
-                    : isCurrent
-                      ? "bg-primary/10 text-primary hover:bg-primary/20"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  'w-full justify-start gap-2 h-auto py-2 px-2 rounded-md text-sm font-normal',
+                  'hover:bg-accent hover:text-accent-foreground'
                 )}
+                onClick={() => onFileClick(doc)}
               >
-                {isCurrent && (
-                  <Star className="h-3 w-3 fill-current" />
-                )}
-                <span>{item}</span>
-                <span className={cn(
-                  "text-xs opacity-70",
-                  isSelected && "text-primary-foreground/70"
-                )}>
-                  ({docs.length})
-                </span>
-              </button>
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="truncate">{fileName}</div>
+                  {doc !== fileName && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {doc}
+                    </div>
+                  )}
+                </div>
+              </Button>
             )
           })}
         </div>
       </div>
-      
-      {/* 右侧：关联文档列表 */}
-      {selectedItem && (
-        <div className="w-64 border-l border-border pl-4 overflow-y-auto">
-          <div className="sticky top-0 bg-background py-2">
-            <h4 className="text-sm font-medium text-muted-foreground mb-2">
-              "{selectedItem}" 的关联文档 ({selectedDocs.length})
-            </h4>
-          </div>
-          <div className="space-y-1">
-            {selectedDocs.map((doc) => {
-              const fileName = doc.split('/').pop() || doc
-              return (
-                <button
-                  key={doc}
-                  onClick={() => onFileClick(doc)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md 
-                             hover:bg-accent text-left transition-colors group"
-                >
-                  <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate group-hover:text-primary">
-                      {fileName}
-                    </div>
-                    {doc !== fileName && (
-                      <div className="text-xs text-muted-foreground truncate">
-                        {doc}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   )
 }

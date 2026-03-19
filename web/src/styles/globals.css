@@ -29,6 +29,12 @@
   
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+
+  /* 点睛之色：浅浅的墨绿色（用于 logo 与文档信息栏） */
+  --point: oklch(0.72 0.10 158);
+  --point-foreground: oklch(0.16 0.02 160);
+  --point-soft: oklch(0.76 0.10 158 / 0.18);
+  --point-border: oklch(0.76 0.10 158 / 0.35);
   
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
@@ -60,6 +66,12 @@
   
   --accent: oklch(0.371 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
+  /* 点睛之色：暗色模式下稍提升明度，保持不刺眼 */
+  --point: oklch(0.78 0.12 160);
+  --point-foreground: oklch(0.12 0.02 160);
+  --point-soft: oklch(0.78 0.12 160 / 0.22);
+  --point-border: oklch(0.78 0.12 160 / 0.40);
   
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
@@ -88,6 +100,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-point: var(--point);
+  --color-point-foreground: var(--point-foreground);
+  --color-point-soft: var(--point-soft);
+  --color-point-border: var(--point-border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -221,6 +237,42 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+}
+
+/* ============================================================================
+   自动隐藏滚动条：空闲时隐藏，滚动时显示
+   主要用于文章滚动容器
+   ============================================================================ */
+.mdserve-scrollbar-hidden {
+  /*
+    隐藏滚动条但不改变布局占位：
+    - Firefox：用 thin + transparent 让滚动条“不可见”，但仍保持近似宽度/占位
+    - WebKit：不把滚动条宽高设为 0（避免滚动容器内容宽度跳变）
+  */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.mdserve-scrollbar {
+  /* 让滚动条显隐不改变布局宽度（主要用于全屏/非全屏的右上角按钮稳定定位） */
+  scrollbar-gutter: stable;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-thumb:hover {
+  background: transparent;
 }
 
 /* ============================================================================

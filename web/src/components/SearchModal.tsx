@@ -1,8 +1,12 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Search, X, FileText, Loader2, Clock, Trash2, ArrowRight } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { cn, highlightText, getSearchHistory, saveSearchHistory, clearSearchHistory } from '@/lib/utils'
 import { SearchResult } from '../types'
+import { ModalShell } from '@/components/common/ModalShell'
 
 interface SearchModalProps {
   open: boolean
@@ -183,46 +187,47 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-2xl w-[90vw] max-h-[70vh] p-0 gap-0 overflow-hidden shadow-2xl flex flex-col bg-background rounded-xl"
-        hideClose
-        // 覆盖默认的黑色遮罩层，使用更浅的遮罩
-        overlayClassName="bg-black/40 backdrop-blur-sm"
-      >
+      <ModalShell hideClose>
         {/* 搜索输入框 - VS Code 风格 - 固定在顶部 */}
-        <div className="flex items-center px-4 py-3 border-b border-border bg-background flex-shrink-0">
+        <div className="flex items-center px-4 py-3 bg-background flex-shrink-0">
           <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-          <input
+          <Input
             ref={inputRef}
             type="text"
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="搜索文件名或内容..."
-            className="flex-1 bg-transparent border-0 outline-none px-3 text-base placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent border-0 outline-none px-3 text-base placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
             autoComplete="off"
             spellCheck="false"
           />
           {loading ? (
             <Loader2 className="h-5 w-5 text-muted-foreground animate-spin flex-shrink-0" />
           ) : query ? (
-            <button 
-              onClick={handleClear} 
-              className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-1.5 rounded-md flex-shrink-0"
+              onClick={handleClear}
               title="清除"
             >
               <X className="h-4 w-4 text-muted-foreground" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-1.5 rounded-md flex-shrink-0"
               onClick={() => onOpenChange(false)}
-              className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
               title="关闭"
             >
               <X className="h-4 w-4 text-muted-foreground" />
-            </button>
+            </Button>
           )}
         </div>
+
+        <Separator className="bg-border" />
 
         {/* 搜索结果 / 历史记录 - 中间可滚动区域，固定高度 */}
         <div 
@@ -234,13 +239,14 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
             <div className="py-2">
               <div className="flex items-center justify-between px-4 py-1.5">
                 <span className="text-xs font-medium text-muted-foreground">最近搜索</span>
-                <button
+                <Button
+                  variant="ghost"
+                  className="h-auto px-2 py-1 text-xs font-normal text-muted-foreground hover:text-foreground"
                   onClick={handleClearHistory}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Trash2 className="h-3 w-3" />
                   清除
-                </button>
+                </Button>
               </div>
               {history.map((item, index) => (
                 <button
@@ -290,9 +296,10 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
           {/* 搜索结果 */}
           {query && !loading && results.length > 0 && (
             <div className="py-2">
-              <div className="px-4 py-1.5 text-xs text-muted-foreground border-b border-border/50">
+              <div className="px-4 py-1.5 text-xs text-muted-foreground">
                 找到 {results.length} 个结果
               </div>
+              <Separator className="bg-border/50" />
               {results.map((result, index) => (
                 <button
                   key={`${result.path}-${index}`}
@@ -369,7 +376,7 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
             <span>快速搜索</span>
           </div>
         </div>
-      </DialogContent>
+      </ModalShell>
     </Dialog>
   )
 }

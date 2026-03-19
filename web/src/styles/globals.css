@@ -244,7 +244,13 @@ body {
    主要用于文章滚动容器
    ============================================================================ */
 .mdserve-scrollbar-hidden {
-  scrollbar-width: none;
+  /*
+    隐藏滚动条但不改变布局占位：
+    - Firefox：用 thin + transparent 让滚动条“不可见”，但仍保持近似宽度/占位
+    - WebKit：不把滚动条宽高设为 0（避免滚动容器内容宽度跳变）
+  */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
 
 .mdserve-scrollbar {
@@ -253,8 +259,20 @@ body {
 }
 
 .mdserve-scrollbar-hidden::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.mdserve-scrollbar-hidden::-webkit-scrollbar-thumb:hover {
+  background: transparent;
 }
 
 /* ============================================================================

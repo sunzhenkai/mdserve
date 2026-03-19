@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Tag, Folder, FileText, Star } from 'lucide-react'
+import { Tag, Folder, FileText, Star, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ModalShell } from '@/components/common/ModalShell'
 
 interface TagsModalProps {
   open: boolean
@@ -67,13 +68,27 @@ export function TagsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>标签和分类</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
+      <ModalShell className="max-h-[80vh]" hideClose>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-base font-semibold leading-none">标签和分类</h2>
+          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-1.5 hover:bg-accent rounded-md transition-colors flex-shrink-0"
+            title="关闭"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
+          <TabsList className="grid w-full grid-cols-2 px-4">
             <TabsTrigger value="tags" className="flex items-center gap-2">
               <Tag className="h-4 w-4" />
               标签 ({tagsList.length})
@@ -83,8 +98,8 @@ export function TagsModal({
               分类 ({categoriesList.length})
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="tags" className="flex-1 overflow-hidden mt-4">
+
+          <TabsContent value="tags" className="flex-1 overflow-hidden mt-4 px-4">
             {tagsList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无标签
@@ -103,8 +118,8 @@ export function TagsModal({
               </div>
             )}
           </TabsContent>
-          
-          <TabsContent value="categories" className="flex-1 overflow-hidden mt-4">
+
+          <TabsContent value="categories" className="flex-1 overflow-hidden mt-4 px-4">
             {categoriesList.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 暂无分类
@@ -124,10 +139,10 @@ export function TagsModal({
             )}
           </TabsContent>
         </Tabs>
-        
+
         {/* 图例说明 */}
         {(tagsList.length > 0 || categoriesList.length > 0) && (
-          <div className="flex items-center gap-4 pt-2 border-t border-border text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 px-4 py-3 border-t border-border text-xs text-muted-foreground flex-shrink-0">
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3 fill-primary text-primary" />
               <span>当前文档的{activeTab === 'tags' ? '标签' : '分类'}</span>
@@ -138,7 +153,7 @@ export function TagsModal({
             </div>
           </div>
         )}
-      </DialogContent>
+      </ModalShell>
     </Dialog>
   )
 }

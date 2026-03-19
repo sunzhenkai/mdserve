@@ -105,10 +105,12 @@ function AppContent() {
     openTagsModal('categories', category)
   }
 
+  const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="h-14 flex items-center justify-between px-4 border-b border-border bg-card flex-shrink-0">
+      <header className="h-14 mx-4 mt-3 mb-3 flex items-center justify-between px-4 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
         {/* Left: Menu button (mobile) + Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
@@ -119,7 +121,8 @@ function AppContent() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-primary">mdserve</h1>
+          {/* 点睛之色 logo：暖色系淡淡的强调 */}
+          <h1 className="text-xl font-bold text-point">mdserve</h1>
         </div>
         
         {/* Center: Navigation Menu */}
@@ -174,25 +177,29 @@ function AppContent() {
       </header>
       
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex overflow-hidden relative gap-4 px-4 pb-4">
         {/* Desktop Sidebar (FileTree) */}
         {!sidebarCollapsed ? (
-          <aside className="hidden lg:flex flex-col bg-card border-r border-border w-72 relative">
-            <FileTree 
-              files={files} 
-              onSelect={handleFileSelect}
-              selectedPath={currentFile}
-            />
-            <button 
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 
-                         w-4 h-11 flex items-center justify-center
-                         bg-card border border-border rounded-r-md shadow-sm
-                         opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-              onClick={() => setSidebarCollapsed(true)}
-              title="收起文件列表"
-            >
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-            </button>
+          <aside className="hidden lg:flex w-72 h-full relative">
+            <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+              <div className="h-full flex flex-col">
+                <FileTree
+                  files={files}
+                  onSelect={handleFileSelect}
+                  selectedPath={currentFile}
+                />
+              </div>
+              <button
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10
+                           w-4 h-11 flex items-center justify-center
+                           bg-card border border-border rounded-r-md shadow-sm
+                           opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                onClick={() => setSidebarCollapsed(true)}
+                title="收起文件列表"
+              >
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
           </aside>
         ) : (
           <button 
@@ -207,26 +214,34 @@ function AppContent() {
           </button>
         )}
         
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div ref={contentTopRef} />
+        {/* Center Column */}
+        <div className="flex-1 min-w-0 flex flex-col gap-4 h-full">
           {loading ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground">
               加载中...
             </div>
           ) : content ? (
             <>
-              <DocumentInfo 
-                path={currentFile}
-                tags={tags}
-                categories={categories}
-                onTagClick={handleTagClick}
-                onCategoryClick={handleCategoryClick}
-              />
-              <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+              {hasDocumentInfo && (
+                <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
+                  <DocumentInfo
+                    path={currentFile}
+                    tags={tags}
+                    categories={categories}
+                    onTagClick={handleTagClick}
+                    onCategoryClick={handleCategoryClick}
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden">
+                <div className="h-full overflow-y-auto p-4">
+                  <div ref={contentTopRef} />
+                  <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+                </div>
+              </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground px-6 text-center">
               请从左侧选择一个 Markdown 文件开始浏览
             </div>
           )}
@@ -235,20 +250,22 @@ function AppContent() {
         {/* Desktop Outline */}
         {outline.length > 0 && (
           !outlineCollapsed ? (
-            <aside className="hidden lg:flex flex-col bg-card border-l border-border w-60 relative">
-              <Outline 
-                items={outline} 
-              />
-              <button 
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 
-                           w-4 h-11 flex items-center justify-center
-                           bg-card border border-border rounded-l-md shadow-sm
-                           opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-                onClick={() => setOutlineCollapsed(true)}
-                title="收起目录"
-              >
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
+            <aside className="hidden lg:flex w-60 h-full relative">
+              <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+                <div className="h-full flex flex-col">
+                  <Outline items={outline} />
+                </div>
+                <button
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10
+                             w-4 h-11 flex items-center justify-center
+                             bg-card border border-border rounded-l-md shadow-sm
+                             opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                  onClick={() => setOutlineCollapsed(true)}
+                  title="收起目录"
+                >
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
             </aside>
           ) : (
             <button 

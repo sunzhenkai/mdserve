@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Search, X, FileText, Loader2, Clock, Trash2, ArrowRight } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import { cn, highlightText, getSearchHistory, saveSearchHistory, clearSearchHistory } from '@/lib/utils'
 import { SearchResult } from '../types'
+import { ModalShell } from '@/components/common/ModalShell'
 
 interface SearchModalProps {
   open: boolean
@@ -183,12 +184,7 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-2xl w-[90vw] max-h-[70vh] p-0 gap-0 overflow-hidden shadow-2xl flex flex-col bg-background rounded-xl"
-        hideClose
-        // 覆盖默认的黑色遮罩层，使用更浅的遮罩
-        overlayClassName="bg-black/40 backdrop-blur-sm"
-      >
+      <ModalShell hideClose>
         {/* 搜索输入框 - VS Code 风格 - 固定在顶部 */}
         <div className="flex items-center px-4 py-3 border-b border-border bg-background flex-shrink-0">
           <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -369,7 +365,7 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
             <span>快速搜索</span>
           </div>
         </div>
-      </DialogContent>
+      </ModalShell>
     </Dialog>
   )
 }

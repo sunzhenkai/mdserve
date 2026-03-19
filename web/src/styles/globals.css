@@ -29,6 +29,12 @@
   
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+
+  /* 点睛之色：暖色系、淡淡的、优雅（用于 logo 与文档信息栏） */
+  --point: oklch(0.78 0.14 66);
+  --point-foreground: oklch(0.18 0.02 66);
+  --point-soft: oklch(0.82 0.14 66 / 0.18);
+  --point-border: oklch(0.82 0.14 66 / 0.35);
   
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
@@ -60,6 +66,12 @@
   
   --accent: oklch(0.371 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
+  /* 点睛之色：暗色模式下稍提升明度，保持不刺眼 */
+  --point: oklch(0.80 0.16 68);
+  --point-foreground: oklch(0.12 0.02 68);
+  --point-soft: oklch(0.80 0.16 68 / 0.22);
+  --point-border: oklch(0.80 0.16 68 / 0.40);
   
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
@@ -88,6 +100,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-point: var(--point);
+  --color-point-foreground: var(--point-foreground);
+  --color-point-soft: var(--point-soft);
+  --color-point-border: var(--point-border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);

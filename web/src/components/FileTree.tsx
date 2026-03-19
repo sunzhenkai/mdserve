@@ -133,19 +133,18 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   // 排序后的文件列表（目录在前，按字母排序）
   const sortedFiles = useMemo(() => sortFiles(files), [files])
 
-  // 展开状态 - 默认全部展开
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(allDirectoryPaths))
+  // 展开状态：默认折叠；根据 URL/选中文档仅展开“当前文档路径”
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set())
 
-  // 当 selectedPath 改变时，自动展开所有父目录
+  // 当 selectedPath 改变时，仅展开选中文档的父目录链
   useEffect(() => {
-    if (selectedPath) {
-      const parentPaths = getParentPaths(selectedPath)
-      setExpandedPaths(prev => {
-        const next = new Set(prev)
-        parentPaths.forEach(path => next.add(path))
-        return next
-      })
+    if (!selectedPath) {
+      setExpandedPaths(new Set())
+      return
     }
+
+    const parentPaths = getParentPaths(selectedPath)
+    setExpandedPaths(new Set(parentPaths))
   }, [selectedPath])
 
   // 切换单个目录

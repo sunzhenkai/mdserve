@@ -281,7 +281,7 @@ function AppContent() {
                 sidebarCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
               }`}
             >
-              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative z-30">
                 <div className="h-full flex flex-col">
                   <FileTree
                     files={files}
@@ -290,7 +290,7 @@ function AppContent() {
                   />
                 </div>
                 <button
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-50
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-r-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -304,7 +304,7 @@ function AppContent() {
 
             {sidebarCollapsed && (
               <button
-                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30
+                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50
                            w-4 h-11 items-center justify-center
                            bg-card border border-border rounded-r-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -318,7 +318,14 @@ function AppContent() {
         )}
         
         {/* Center Column */}
-        <div className="flex-1 min-w-0 flex flex-col gap-4 h-full">
+        <div
+          className={[
+            'flex-1 min-w-0 flex flex-col gap-4 h-full',
+            // 消除 flex gap 在“折叠侧栏宽度为 0 时仍然存在”的偏移，让文档 card 边缘与顶部导航对齐
+            sidebarCollapsed ? '-ml-4' : '',
+            outlineCollapsed ? '-mr-4' : '',
+          ].join(' ')}
+        >
           {loading ? (
             <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground">
               加载中...
@@ -326,7 +333,7 @@ function AppContent() {
           ) : content ? (
             <>
               {!documentFullscreen && (
-                <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
+                <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col z-0">
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
@@ -388,12 +395,12 @@ function AppContent() {
                 outlineCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
               }`}
             >
-              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative z-30">
                 <div className="h-full flex flex-col">
                   <Outline items={outline} />
                 </div>
                 <button
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-50
                              w-4 h-11 flex items-center justify-center
                              bg-card border border-border rounded-l-md shadow-sm
                              opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
@@ -407,7 +414,7 @@ function AppContent() {
 
             {outlineCollapsed && (
               <button
-                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30
+                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-50
                            w-4 h-11 items-center justify-center
                            bg-card border border-border rounded-l-md shadow-sm
                            opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"

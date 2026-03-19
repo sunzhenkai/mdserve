@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import { ModalShell } from '@/components/common/ModalShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 
 interface TagsModalProps {
   open: boolean
@@ -71,7 +73,7 @@ export function TagsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <ModalShell className="max-h-[80vh]" hideClose>
         {/* modal header: 标题 + 分类/标签切换 */}
-        <div className="flex flex-col flex-shrink-0 border-b border-border bg-background">
+        <div className="flex flex-col flex-shrink-0 bg-background">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <Tag className="h-4 w-4 text-muted-foreground" />
@@ -86,73 +88,88 @@ export function TagsModal({
             </button>
           </div>
 
-          <div className="grid w-full grid-cols-2 px-4 pb-3 gap-1 bg-transparent">
-            <button
-              type="button"
-              onClick={() => handleTabChange('categories')}
-              className={cn(
-                'flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
-                activeTab === 'categories'
-                  ? 'bg-background text-foreground border-border/60 shadow-sm'
-                  : 'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60'
-              )}
-            >
-              <Folder className="h-4 w-4" />
-              分类 ({categoriesList.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('tags')}
-              className={cn(
-                'flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
-                activeTab === 'tags'
-                  ? 'bg-background text-foreground border-border/60 shadow-sm'
-                  : 'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60'
-              )}
-            >
-              <Tag className="h-4 w-4" />
-              标签 ({tagsList.length})
-            </button>
-          </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => handleTabChange(value as TabType)}
+          >
+            <TabsList className="grid w-full grid-cols-2 gap-1 px-4 pb-3 bg-transparent h-auto p-0 rounded-none border-0 text-muted-foreground">
+              <TabsTrigger
+                value="categories"
+                className={cn(
+                  'flex items-center justify-start gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                  'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60',
+                  'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-sm'
+                )}
+              >
+                <Folder className="h-4 w-4" />
+                分类 ({categoriesList.length})
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="tags"
+                className={cn(
+                  'flex items-center justify-start gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
+                  'bg-transparent text-muted-foreground border-transparent hover:bg-muted/60',
+                  'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-sm'
+                )}
+              >
+                <Tag className="h-4 w-4" />
+                标签 ({tagsList.length})
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="tags">
+              {/* 由 Tabs 控制可见性；业务数据仍由 selectedItem/activeTab 决定 */}
+            </TabsContent>
+            <TabsContent value="categories">
+              {/* 由 Tabs 控制可见性；业务数据仍由 selectedItem/activeTab 决定 */}
+            </TabsContent>
+          </Tabs>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 mt-0">
-          {activeTab === 'tags' ? (
-            tagsList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无标签
-              </div>
-            ) : (
-              <div className="flex flex-col min-h-0 w-full">
-                <ItemPanel
-                  items={tagsList}
-                  currentItems={currentTags}
-                  selectedItem={selectedItem}
-                  selectedDocs={selectedDocs}
-                  onItemClick={handleItemClick}
-                  onFileClick={handleFileClick}
-                  type="tags"
-                />
-              </div>
-            )
-          ) : categoriesList.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              暂无分类
-            </div>
-          ) : (
-            <div className="flex flex-col min-h-0 w-full">
-              <ItemPanel
-                items={categoriesList}
-                currentItems={currentCategories}
-                selectedItem={selectedItem}
-                selectedDocs={selectedDocs}
-                onItemClick={handleItemClick}
-                onFileClick={handleFileClick}
-                type="categories"
-              />
-            </div>
-          )}
-        </div>
+        <Separator className="bg-border" />
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => handleTabChange(value as TabType)}
+        >
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 mt-0">
+            <TabsContent value="tags">
+              {tagsList.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">暂无标签</div>
+              ) : (
+                <div className="flex flex-col min-h-0 w-full">
+                  <ItemPanel
+                    items={tagsList}
+                    currentItems={currentTags}
+                    selectedItem={selectedItem}
+                    selectedDocs={selectedDocs}
+                    onItemClick={handleItemClick}
+                    onFileClick={handleFileClick}
+                    type="tags"
+                  />
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="categories">
+              {categoriesList.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">暂无分类</div>
+              ) : (
+                <div className="flex flex-col min-h-0 w-full">
+                  <ItemPanel
+                    items={categoriesList}
+                    currentItems={currentCategories}
+                    selectedItem={selectedItem}
+                    selectedDocs={selectedDocs}
+                    onItemClick={handleItemClick}
+                    onFileClick={handleFileClick}
+                    type="categories"
+                  />
+                </div>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
       </ModalShell>
     </Dialog>
   )
@@ -221,8 +238,9 @@ function ItemPanel({
 
       {/* 下：关联文档列表（未选择时不渲染任何占位区域） */}
       {selectedItem ? (
-        <div className="border-t border-border/50 pt-3">
-          <div>
+        <div>
+          <Separator className="bg-border/50" />
+          <div className="pt-3">
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-2">
               <h4 className="px-1 text-sm font-medium text-muted-foreground mb-2">
                 "{selectedItem}" 的关联文档 ({selectedDocs.length})

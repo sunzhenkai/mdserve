@@ -1,4 +1,4 @@
-import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
+import { Menu, List, ChevronLeft, ChevronRight, Tags, Search, Maximize2, Minimize2 } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
@@ -11,6 +11,7 @@ import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
 import { FileProvider, UIProvider, useFile, useUI } from './contexts'
 import { useEffect, useRef } from 'react'
+import { useState } from 'react'
 
 function AppContent() {
   const {
@@ -45,6 +46,8 @@ function AppContent() {
     setTagsModalOpen,
     openTagsModal,
   } = useUI()
+
+  const [documentFullscreen, setDocumentFullscreen] = useState(false)
 
   // 内容区滚动到顶部锚点（在 DocumentInfo 之前）
   const contentTopRef = useRef<HTMLDivElement>(null)
@@ -90,6 +93,27 @@ function AppContent() {
 
     return () => window.clearTimeout(timer)
   }, [loading, currentFile])
+
+  // 全屏：监听 ESC 退出 + 禁止底层滚动
+  useEffect(() => {
+    if (!documentFullscreen) return
+
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setDocumentFullscreen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [documentFullscreen])
 
   // 包装 handleFileSelect，加载文件后关闭移动端菜单
   const handleFileSelect = (path: string) => {
@@ -147,6 +171,38 @@ function AppContent() {
           >
             <Search className="h-5 w-5" />
           </Button>
+
+          {/* Desktop: directory toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? '展开文档目录' : '收起文档目录'}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+            )}
+          </Button>
+
+          {/* Desktop: outline toggle */}
+          {outline.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => setOutlineCollapsed(!outlineCollapsed)}
+              title={outlineCollapsed ? '展开目录' : '收起目录'}
+            >
+              {outlineCollapsed ? (
+                <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              )}
+            </Button>
+          )}
           
           {/* Outline button (mobile) */}
           {outline.length > 0 && (
@@ -222,23 +278,36 @@ function AppContent() {
             </div>
           ) : content ? (
             <>
-              {hasDocumentInfo && (
-                <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
-                  <DocumentInfo
-                    path={currentFile}
-                    tags={tags}
-                    categories={categories}
-                    onTagClick={handleTagClick}
-                    onCategoryClick={handleCategoryClick}
-                  />
+              {!documentFullscreen && hasDocumentInfo && (
+                  <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
+                    <DocumentInfo
+                      path={currentFile}
+                      tags={tags}
+                      categories={categories}
+                      onTagClick={handleTagClick}
+                      onCategoryClick={handleCategoryClick}
+                    />
+                  </div>
+                )}
+              {!documentFullscreen && (
+                <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative">
+                  <button
+                    onClick={() => setDocumentFullscreen(true)}
+                    className="absolute top-3 right-3 z-10
+                               p-1.5 rounded-md bg-background/70 backdrop-blur-sm
+                               border border-border/60 hover:bg-accent hover:text-accent-foreground
+                               transition-colors cursor-pointer"
+                    title="全屏"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </button>
+
+                  <div className="h-full overflow-y-auto p-4">
+                    <div ref={contentTopRef} />
+                    <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+                  </div>
                 </div>
               )}
-              <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden">
-                <div className="h-full overflow-y-auto p-4">
-                  <div ref={contentTopRef} />
-                  <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
-                </div>
-              </div>
             </>
           ) : (
             <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground px-6 text-center">
@@ -250,7 +319,7 @@ function AppContent() {
         {/* Desktop Outline */}
         {outline.length > 0 && (
           !outlineCollapsed ? (
-            <aside className="hidden lg:flex w-60 h-full relative">
+            <aside className="hidden lg:flex w-[clamp(240px,22vw,320px)] h-full relative">
               <div className="h-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
                 <div className="h-full flex flex-col">
                   <Outline items={outline} />
@@ -327,6 +396,43 @@ function AppContent() {
         onOpenChange={setMobileSearchOpen}
         onFileSelect={handleFileSelect}
       />
+
+      {/* Document Fullscreen */}
+      {documentFullscreen && content && (
+        <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
+          <div className="h-full flex flex-col gap-4 px-4 py-4">
+            {hasDocumentInfo && (
+              <div className="rounded-xl border border-point-border bg-point-soft shadow-sm backdrop-blur-sm p-4">
+                <DocumentInfo
+                  path={currentFile}
+                  tags={tags}
+                  categories={categories}
+                  onTagClick={handleTagClick}
+                  onCategoryClick={handleCategoryClick}
+                />
+              </div>
+            )}
+
+            <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative">
+              <button
+                onClick={() => setDocumentFullscreen(false)}
+                className="absolute top-3 right-3 z-10
+                           p-1.5 rounded-md bg-background/70 backdrop-blur-sm
+                           border border-border/60 hover:bg-accent hover:text-accent-foreground
+                           transition-colors cursor-pointer"
+                title="退出全屏 (Esc)"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
+
+              <div className="h-full overflow-y-auto p-4">
+                <div ref={contentTopRef} />
+                <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

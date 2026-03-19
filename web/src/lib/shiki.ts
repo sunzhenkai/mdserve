@@ -1,4 +1,4 @@
-import { createHighlighter, type Highlighter } from 'shiki'
+import type { Highlighter } from 'shiki'
 
 export type { Highlighter }
 
@@ -21,52 +21,21 @@ export async function getHighlighter(): Promise<Highlighter> {
   }
 
   // 开始初始化
-  highlighterPromise = createHighlighter({
-    themes: ['github-light', 'github-dark'],
-    langs: [
-      // 常用语言
-      'javascript',
-      'typescript',
-      'jsx',
-      'tsx',
-      'python',
-      'java',
-      'c',
-      'cpp',
-      'csharp',
-      'go',
-      'rust',
-      'php',
-      'ruby',
-      'swift',
-      'kotlin',
-      // Web 前端
-      'html',
-      'css',
-      'scss',
-      'less',
-      'vue',
-      'svelte',
-      // 配置和数据
-      'json',
-      'yaml',
-      'toml',
-      'ini',
-      'xml',
-      // 脚本
-      'bash',
-      'shell',
-      'powershell',
-      'docker',
-      // 文档
-      'markdown',
-      'mdx',
-      // 其他
-      'sql',
-      'graphql',
-      'regex',
-    ],
-  })
+  highlighterPromise = import('shiki').then(({ createHighlighter }) =>
+    createHighlighter({
+      themes: ['github-light', 'github-dark'],
+      langs: [
+        // 最小预加载，其他语言按需加载
+        'text',
+        'plaintext',
+        'markdown',
+        'javascript',
+        'typescript',
+        'json',
+        'bash',
+      ],
+    })
+  )
 
   highlighterInstance = await highlighterPromise
   return highlighterInstance

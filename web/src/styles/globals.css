@@ -245,6 +245,12 @@ body {
   color: #ff7b72;
 }
 
+/* 覆盖 typography 默认的 code 前后反引号 */
+.prose :where(:not(pre) > code):not(:where([class~="not-prose"] *))::before,
+.prose :where(:not(pre) > code):not(:where([class~="not-prose"] *))::after {
+  content: none;
+}
+
 /* 代码块容器样式 */
 .prose pre {
   padding: 0;
@@ -278,7 +284,7 @@ body {
 /* Shiki 双主题变量定义 */
 :root {
   --shiki-light: #24292f;
-  --shiki-light-bg: #f6f8fa;
+  --shiki-light-bg: #f1f5f9;
 }
 
 .dark {
@@ -288,14 +294,16 @@ body {
 
 /* Shiki 双主题支持 */
 .shiki {
+  --shiki-light-bg: #f1f5f9 !important;
   color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
+  background-color: var(--shiki-light-bg) !important;
   border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
 }
 
 .dark .shiki {
+  --shiki-dark-bg: #161b22 !important;
   color: var(--shiki-dark);
-  background-color: var(--shiki-dark-bg);
+  background-color: var(--shiki-dark-bg) !important;
 }
 
 .prose pre .shiki,

@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -62,10 +63,11 @@ func generateSlug(text string, count map[string]int) string {
 	slug = slugRegex.ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
 
-	// Handle duplicate slugs
+	// Handle duplicate slugs (match rehype-slug behavior)
+	// rehype-slug uses: slug, slug-1, slug-2, ...
 	if c, exists := count[slug]; exists {
 		count[slug] = c + 1
-		slug = slug + "-" + strings.Repeat("a", c)
+		slug = fmt.Sprintf("%s-%d", slug, c)
 	} else {
 		count[slug] = 1
 	}

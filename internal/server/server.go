@@ -117,12 +117,19 @@ func New(config *Config) (*Server, error) {
 	go hub.Run()
 
 	// Create file watcher
-	w, err := watcher.New(absPath, func(path string) {
-		// Broadcast file change to all connected clients
-		relPath, _ := filepath.Rel(absPath, path)
-		message := fmt.Sprintf(`{"type":"reload","path":"%s"}`, relPath)
-		hub.broadcast <- message
-	})
+	w, err := watcher.New(absPath,
+		// File change callback - reload specific file
+		func(path string) {
+			relPath, _ := filepath.Rel(absPath, path)
+			message := fmt.Sprintf(`{"type":"reload","path":"%s"}`, relPath)
+			hub.broadcast <- message
+		},
+		// Tree change callback - reload file tree
+		func() {
+			message := `{"type":"tree_reload"}`
+			hub.broadcast <- message
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}

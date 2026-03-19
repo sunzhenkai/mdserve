@@ -5,10 +5,12 @@ import rehypeSlug from 'rehype-slug'
 import { useEffect, useState, useRef } from 'react'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { OutlineItem } from '@/types'
 import 'highlight.js/styles/github-dark.css'
 
 interface MarkdownViewerProps {
   content: string
+  onOutlineChange?: (outline: OutlineItem[]) => void
 }
 
 // 代码块包装组件，带复制按钮
@@ -60,7 +62,23 @@ function CodeBlock({ children, ...props }: { children: React.ReactNode; [key: st
   )
 }
 
-export function MarkdownViewer({ content }: MarkdownViewerProps) {
+export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // 从 DOM 中提取实际的 outline（使用 rehype-slug 生成的 id）
+  useEffect(() => {
+    if (containerRef.current && onOutlineChange) {
+      const headings = containerRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      const outline: OutlineItem[] = Array.from(headings).map(heading => {
+        const level = parseInt(heading.tagName.charAt(1))
+        const text = heading.textContent || ''
+        const slug = heading.id || ''
+        return { level, text, slug }
+      })
+      onOutlineChange(outline)
+    }
+  }, [content, onOutlineChange])
+
   // 处理锚点点击，实现平滑滚动
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -82,7 +100,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }, [])
 
   return (
-    <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20">
+    <div ref={containerRef} className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeSlug]}

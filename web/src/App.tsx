@@ -68,6 +68,30 @@ function App() {
       .catch(console.error)
   }, [])
 
+  // 加载配置并处理初始文件
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const path = params.get('path')
+    
+    if (path) {
+      // URL 中有 path，直接加载
+      loadFile(path, false)
+    } else {
+      // URL 中没有 path，先加载配置获取默认文档，然后加载默认文档
+      fetch('/api/config')
+        .then(res => res.json())
+        .then(data => {
+          const docPath = data.defaultDoc || 'README.md'
+          loadFile(docPath, true)
+        })
+        .catch(err => {
+          console.error('Failed to load config:', err)
+          // 即使配置加载失败，也尝试加载 README.md
+          loadFile('README.md', true)
+        })
+    }
+  }, []) // 只在组件挂载时执行一次
+
   // 加载全局标签和分类
   useEffect(() => {
     fetch('/api/tags')
@@ -89,26 +113,41 @@ function App() {
 
   // WebSocket 消息处理 - 实时刷新
   useEffect(() => {
-    if (wsMessage && currentFile) {
+    if (wsMessage) {
       const msg = JSON.parse(wsMessage)
-      if (msg.type === 'reload' && msg.path === currentFile) {
+      
+      if (msg.type === 'reload' && currentFile && msg.path === currentFile) {
+        // 文件内容变更，重新加载当前文件
         loadFile(currentFile)
+      } else if (msg.type === 'tree_reload') {
+        // 文件树变更（目录创建/删除/重命名），重新加载文件树
+        fetch('/api/files')
+          .then(res => res.json())
+          .then(data => setFiles(data.files || []))
+          .catch(console.error)
       }
     }
   }, [wsMessage, currentFile])
 
-  const loadFile = async (path: string) => {
+  const loadFile = async (path: string, updateUrl = true) => {
     setLoading(true)
     try {
       const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`)
       const data = await res.json()
       setContent(data.content || '')
-      setOutline(data.outline || [])
+      // Outline will be extracted from DOM in MarkdownViewer component
+      // to ensure slug IDs match rehype-slug generated IDs
       setTags(data.tags || [])
       setCategories(data.categories || [])
       setCurrentFile(path)
       // 移动端加载文件后关闭抽屉
       setMobileMenuOpen(false)
+      // 更新 URL
+      if (updateUrl) {
+        const url = new URL(window.location.href)
+        url.searchParams.set('path', path)
+        window.history.pushState({}, '', url.toString())
+      }
     } catch (error) {
       console.error('Failed to load file:', error)
     } finally {
@@ -118,6 +157,11 @@ function App() {
 
   const handleFileSelect = (path: string) => {
     loadFile(path)
+  }
+
+  // 处理前端生成的 outline（从 DOM 中提取，确保 id 匹配）
+  const handleOutlineChange = (newOutline: OutlineItem[]) => {
+    setOutline(newOutline)
   }
 
   // 处理标签点击
@@ -253,7 +297,7 @@ function App() {
                 onTagClick={handleTagClick}
                 onCategoryClick={handleCategoryClick}
               />
-              <MarkdownViewer content={content} />
+              <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">

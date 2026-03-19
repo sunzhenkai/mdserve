@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,37 @@ function collectAllPaths(files: FileInfo[]): Set<string> {
   }
   collect(files)
   return paths
+}
+
+// 获取选中文件的所有父目录路径
+function getParentPaths(selectedPath: string | null): string[] {
+  if (!selectedPath) return []
+  
+  const parents: string[] = []
+  const parts = selectedPath.split('/')
+  
+  // 从根目录开始，逐级添加父目录
+  for (let i = 1; i < parts.length; i++) {
+    parents.push(parts.slice(0, i).join('/'))
+  }
+  
+  return parents
+}
+
+// 排序文件：目录在前，按字母排序
+function sortFiles(files: FileInfo[]): FileInfo[] {
+  return [...files]
+    .sort((a, b) => {
+      // 目录排在前面
+      if (a.type === 'directory' && b.type !== 'directory') return -1
+      if (a.type !== 'directory' && b.type === 'directory') return 1
+      // 同类型按字母顺序排序
+      return a.name.localeCompare(b.name, 'zh-CN')
+    })
+    .map(file => ({
+      ...file,
+      children: file.children ? sortFiles(file.children) : undefined
+    }))
 }
 
 interface TreeNodeProps {
@@ -98,9 +129,24 @@ function TreeNode({ item, onSelect, selectedPath, depth, expandedPaths, toggleEx
 export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   // 收集所有目录路径
   const allDirectoryPaths = useMemo(() => collectAllPaths(files), [files])
+  
+  // 排序后的文件列表（目录在前，按字母排序）
+  const sortedFiles = useMemo(() => sortFiles(files), [files])
 
   // 展开状态 - 默认全部展开
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(allDirectoryPaths))
+
+  // 当 selectedPath 改变时，自动展开所有父目录
+  useEffect(() => {
+    if (selectedPath) {
+      const parentPaths = getParentPaths(selectedPath)
+      setExpandedPaths(prev => {
+        const next = new Set(prev)
+        parentPaths.forEach(path => next.add(path))
+        return next
+      })
+    }
+  }, [selectedPath])
 
   // 切换单个目录
   const toggleExpand = (path: string) => {
@@ -162,10 +208,10 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
       {/* 文件列表 */}
       <ScrollArea className="flex-1">
         <div className="p-2">
-          {files.length === 0 ? (
+          {sortedFiles.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-4">暂无文件</div>
           ) : (
-            files.map((file) => (
+            sortedFiles.map((file) => (
               <TreeNode
                 key={file.path}
                 item={file}

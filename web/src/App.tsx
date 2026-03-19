@@ -48,6 +48,8 @@ function AppContent() {
   } = useUI()
 
   const [documentFullscreen, setDocumentFullscreen] = useState(false)
+  const hasSidebarContent = files.length > 0
+  const hasOutlineContent = outline.length > 0
 
   // 内容区滚动到顶部锚点（在 DocumentInfo 之前）
   const contentTopRef = useRef<HTMLDivElement>(null)
@@ -203,39 +205,47 @@ function AppContent() {
       {/* Main Content */}
       <main className="flex-1 flex overflow-hidden relative gap-4 px-4 pb-4">
         {/* Desktop Sidebar (FileTree) */}
-        {!sidebarCollapsed ? (
-          <aside className="hidden lg:flex w-72 min-w-72 h-full relative flex-shrink-0">
-            <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
-              <div className="h-full flex flex-col">
-                <FileTree
-                  files={files}
-                  onSelect={handleFileSelect}
-                  selectedPath={currentFile}
-                />
+        {hasSidebarContent && (
+          <>
+            <aside
+              className={`hidden lg:flex h-full relative flex-shrink-0 overflow-hidden transition-all duration-200 ease-out ${
+                sidebarCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
+              }`}
+            >
+              <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
+                <div className="h-full flex flex-col">
+                  <FileTree
+                    files={files}
+                    onSelect={handleFileSelect}
+                    selectedPath={currentFile}
+                  />
+                </div>
+                <button
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10
+                             w-4 h-11 flex items-center justify-center
+                             bg-card border border-border rounded-r-md shadow-sm
+                             opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                  onClick={() => setSidebarCollapsed(true)}
+                  title="收起文件列表"
+                >
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
+            </aside>
+
+            {sidebarCollapsed && (
               <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10
-                           w-4 h-11 flex items-center justify-center
+                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10
+                           w-4 h-11 items-center justify-center
                            bg-card border border-border rounded-r-md shadow-sm
                            opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-                onClick={() => setSidebarCollapsed(true)}
-                title="收起文件列表"
+                onClick={() => setSidebarCollapsed(false)}
+                title="展开文件列表"
               >
-                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
-            </div>
-          </aside>
-        ) : (
-          <button 
-            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10
-                       w-4 h-11 items-center justify-center
-                       bg-card border border-border rounded-r-md shadow-sm
-                       opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-            onClick={() => setSidebarCollapsed(false)}
-            title="展开文件列表"
-          >
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
+            )}
+          </>
         )}
         
         {/* Center Column */}
@@ -250,21 +260,21 @@ function AppContent() {
                 <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
                   {/* Content */}
                   <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative">
-                    <button
-                      onClick={() => setDocumentFullscreen(true)}
-                      className="absolute top-3 right-3 z-10
-                                 p-1.5 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 transition-colors cursor-pointer"
-                      title="全屏"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </button>
-
                     <div ref={contentTopRef} />
 
-                    {hasDocumentInfo && (
-                      <div className="bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10">
+                    {hasDocumentInfo ? (
+                      <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70 shadow-sm">
+                        <button
+                          onClick={() => setDocumentFullscreen(true)}
+                          className="absolute top-1/2 right-3 -translate-y-1/2 z-10
+                                     p-1 rounded-md bg-background/70 backdrop-blur-sm
+                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
+                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                          title="全屏"
+                        >
+                          <Maximize2 className="h-3.5 w-3.5" />
+                        </button>
+
                         <DocumentInfo
                           path={currentFile}
                           tags={tags}
@@ -273,6 +283,17 @@ function AppContent() {
                           onCategoryClick={handleCategoryClick}
                         />
                       </div>
+                    ) : (
+                      <button
+                        onClick={() => setDocumentFullscreen(true)}
+                        className="absolute top-3 right-3 z-10
+                                   p-1 rounded-md bg-background/70 backdrop-blur-sm
+                                   border border-border/60 hover:bg-accent hover:text-accent-foreground
+                                   opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                        title="全屏"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </button>
                     )}
 
                     <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
@@ -288,9 +309,13 @@ function AppContent() {
         </div>
         
         {/* Desktop Outline */}
-        {outline.length > 0 && (
-          !outlineCollapsed ? (
-            <aside className="hidden lg:flex w-72 min-w-72 h-full relative flex-shrink-0">
+        {hasOutlineContent && (
+          <>
+            <aside
+              className={`hidden lg:flex h-full relative flex-shrink-0 overflow-hidden transition-all duration-200 ease-out ${
+                outlineCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
+              }`}
+            >
               <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative">
                 <div className="h-full flex flex-col">
                   <Outline items={outline} />
@@ -307,18 +332,20 @@ function AppContent() {
                 </button>
               </div>
             </aside>
-          ) : (
-            <button 
-              className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10
-                         w-4 h-11 items-center justify-center
-                         bg-card border border-border rounded-l-md shadow-sm
-                         opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-              onClick={() => setOutlineCollapsed(false)}
-              title="展开目录"
-            >
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-            </button>
-          )
+
+            {outlineCollapsed && (
+              <button
+                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10
+                           w-4 h-11 items-center justify-center
+                           bg-card border border-border rounded-l-md shadow-sm
+                           opacity-60 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                onClick={() => setOutlineCollapsed(false)}
+                title="展开目录"
+              >
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+          </>
         )}
       </main>
       
@@ -374,21 +401,34 @@ function AppContent() {
           <div className="h-full flex flex-col gap-4 px-4 py-4">
             <div className="flex-1 min-h-0 rounded-xl border border-point-border bg-card/70 shadow-sm backdrop-blur-sm overflow-hidden relative flex flex-col">
               <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-0 relative">
-                <button
-                  onClick={() => setDocumentFullscreen(false)}
-                  className="absolute top-3 right-3 z-10
-                             p-1.5 rounded-md bg-background/70 backdrop-blur-sm
-                             border border-border/60 hover:bg-accent hover:text-accent-foreground
-                             transition-colors cursor-pointer"
-                  title="退出全屏 (Esc)"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </button>
+                {hasDocumentInfo ? null : (
+                  <button
+                    onClick={() => setDocumentFullscreen(false)}
+                    className="absolute top-3 right-3 z-10
+                               p-1 rounded-md bg-background/70 backdrop-blur-sm
+                               border border-border/60 hover:bg-accent hover:text-accent-foreground
+                               opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                    title="退出全屏 (Esc)"
+                  >
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
 
                 <div ref={contentTopRef} />
 
-                {hasDocumentInfo && (
-                  <div className="bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10">
+                {hasDocumentInfo ? (
+                  <div className="relative bg-point-soft py-2 mb-4 -mx-4 px-4 pr-10 border-b border-border/70 shadow-sm">
+                    <button
+                      onClick={() => setDocumentFullscreen(false)}
+                      className="absolute top-1/2 right-3 -translate-y-1/2 z-10
+                                 p-1 rounded-md bg-background/70 backdrop-blur-sm
+                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
+                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
+                      title="退出全屏 (Esc)"
+                    >
+                      <Minimize2 className="h-3.5 w-3.5" />
+                    </button>
+
                     <DocumentInfo
                       path={currentFile}
                       tags={tags}
@@ -397,7 +437,7 @@ function AppContent() {
                       onCategoryClick={handleCategoryClick}
                     />
                   </div>
-                )}
+                ) : null}
 
                 <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
               </div>

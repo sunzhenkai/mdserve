@@ -1,5 +1,7 @@
 # mdserve
 
+[English](./README_EN.md) | 中文
+
 一个实时 Markdown 文件服务器，提供 Web 界面浏览和渲染 Markdown 文件。
 
 ## 功能特性

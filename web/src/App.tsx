@@ -378,7 +378,12 @@ function AppContent() {
                       </button>
                     )}
 
-                    <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+                    <MarkdownViewer
+                      content={content}
+                      currentFile={currentFile}
+                      onNavigateToFile={handleFileSelect}
+                      onOutlineChange={handleOutlineChange}
+                    />
                   </div>
                 </div>
               )}
@@ -525,7 +530,12 @@ function AppContent() {
 
                 <div ref={contentTopRef} />
 
-                <MarkdownViewer content={content} onOutlineChange={handleOutlineChange} />
+                <MarkdownViewer
+                  content={content}
+                  currentFile={currentFile}
+                  onNavigateToFile={handleFileSelect}
+                  onOutlineChange={handleOutlineChange}
+                />
               </div>
             </div>
           </div>

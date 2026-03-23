@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -11,25 +12,69 @@ import (
 	"github.com/wii/mdserve/internal/markdown"
 )
 
+func (s *Server) resolveRequestPath(rawPath, rawBase string) (string, bool) {
+	requested := strings.TrimSpace(strings.ReplaceAll(rawPath, "\\", "/"))
+	if requested == "" {
+		return "", false
+	}
+
+	isRootRelative := strings.HasPrefix(requested, "/")
+	requested = strings.TrimLeft(requested, "/")
+	requested = path.Clean(requested)
+	if requested == "." || requested == ".." || strings.HasPrefix(requested, "../") {
+		return "", false
+	}
+
+	resolved := requested
+	if !isRootRelative && strings.TrimSpace(rawBase) != "" {
+		base := strings.TrimSpace(strings.ReplaceAll(rawBase, "\\", "/"))
+		base = strings.TrimLeft(base, "/")
+		base = path.Clean(base)
+		if base == ".." || strings.HasPrefix(base, "../") {
+			return "", false
+		}
+		baseDir := path.Dir(base)
+		if baseDir == "." {
+			baseDir = ""
+		}
+		if baseDir != "" {
+			resolved = path.Clean(baseDir + "/" + requested)
+		}
+	}
+
+	if resolved == "." || resolved == ".." || strings.HasPrefix(resolved, "../") {
+		return "", false
+	}
+	return resolved, true
+}
+
+func (s *Server) toAbsolutePath(relPath string) (string, bool) {
+	fullPath := filepath.Join(s.rootPath, filepath.FromSlash(relPath))
+	rel, err := filepath.Rel(s.rootPath, fullPath)
+	if err != nil {
+		return "", false
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", false
+	}
+	return fullPath, true
+}
+
 func (s *Server) handleGetFile(c *gin.Context) {
-	path := c.Query("path")
-	if path == "" {
+	requestPath := c.Query("path")
+	if requestPath == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "path parameter is required"})
 		return
 	}
 
-	// Clean the path to prevent directory traversal
-	path = filepath.Clean(path)
-	if strings.HasPrefix(path, "..") {
+	relPath, ok := s.resolveRequestPath(requestPath, "")
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
 		return
 	}
 
-	// Build full path
-	fullPath := filepath.Join(s.rootPath, path)
-
-	// Check if file exists and is within root
-	if !strings.HasPrefix(fullPath, s.rootPath) {
+	fullPath, ok := s.toAbsolutePath(relPath)
+	if !ok {
 		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
 		return
 	}
@@ -61,6 +106,35 @@ func (s *Server) handleGetFile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleGetAsset(c *gin.Context) {
+	requestPath := c.Query("path")
+	basePath := c.Query("base")
+	if requestPath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "path parameter is required"})
+		return
+	}
+
+	relPath, ok := s.resolveRequestPath(requestPath, basePath)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
+		return
+	}
+
+	fullPath, ok := s.toAbsolutePath(relPath)
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
+	info, err := os.Stat(fullPath)
+	if err != nil || info.IsDir() {
+		c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
+		return
+	}
+
+	c.File(fullPath)
 }
 
 // SearchResult represents a search result

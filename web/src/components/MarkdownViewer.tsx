@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
-import { useEffect, useState, useRef, useMemo, useId } from 'react'
+import { useEffect, useState, useRef, useMemo, useId, type MouseEvent as ReactMouseEvent } from 'react'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OutlineItem } from '@/types'
@@ -9,7 +9,50 @@ import { getHighlighter, loadLanguageIfNeeded, type Highlighter } from '@/lib/sh
 
 interface MarkdownViewerProps {
   content: string
+  currentFile?: string | null
+  onNavigateToFile?: (path: string) => void
   onOutlineChange?: (outline: OutlineItem[]) => void
+}
+
+function isExternalUrl(href: string): boolean {
+  return /^(?:[a-z]+:)?\/\//i.test(href) || /^(mailto:|tel:|data:)/i.test(href)
+}
+
+function normalizeDocPath(path: string): string {
+  const segments = path.replace(/\\/g, '/').split('/')
+  const stack: string[] = []
+  for (const segment of segments) {
+    if (!segment || segment === '.') continue
+    if (segment === '..') {
+      if (stack.length > 0) stack.pop()
+      continue
+    }
+    stack.push(segment)
+  }
+  return stack.join('/')
+}
+
+function dirname(path: string): string {
+  const normalized = path.replace(/\\/g, '/')
+  const idx = normalized.lastIndexOf('/')
+  return idx >= 0 ? normalized.slice(0, idx) : ''
+}
+
+function resolveAgainstCurrentFile(targetPath: string, currentFile?: string | null): string {
+  const raw = targetPath.replace(/\\/g, '/')
+  if (raw.startsWith('/')) {
+    return normalizeDocPath(raw.slice(1))
+  }
+  const baseDir = currentFile ? dirname(currentFile) : ''
+  return normalizeDocPath(baseDir ? `${baseDir}/${raw}` : raw)
+}
+
+function looksLikeMarkdownPath(path: string): boolean {
+  const withoutQuery = path.split('?')[0]
+  const fileName = withoutQuery.split('/').pop() || ''
+  if (!fileName) return true
+  if (!fileName.includes('.')) return true
+  return /\.mdx?$/i.test(fileName)
 }
 
 function MermaidDiagram({ code }: { code: string }) {
@@ -179,7 +222,7 @@ function CodeHighlight({
   )
 }
 
-export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps) {
+export function MarkdownViewer({ content, currentFile, onNavigateToFile, onOutlineChange }: MarkdownViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [highlighter, setHighlighter] = useState<Highlighter | null>(null)
   const [displayContent, setDisplayContent] = useState(content)
@@ -229,9 +272,12 @@ export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      if (target.tagName === 'A' && target.getAttribute('href')?.startsWith('#')) {
+      const anchor = target.closest('a')
+      if (!anchor) return
+      const href = anchor.getAttribute('href')
+      if (href?.startsWith('#')) {
         e.preventDefault()
-        const id = target.getAttribute('href')?.slice(1)
+        const id = href.slice(1)
         if (id) {
           const element = document.getElementById(id)
           if (element) {
@@ -294,13 +340,63 @@ export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps
               </code>
             )
           },
+          a: ({ href, children, ...props }) => {
+            const link = href || ''
+            if (!link) {
+              return <a {...props}>{children}</a>
+            }
+            if (link.startsWith('#') || isExternalUrl(link)) {
+              return (
+                <a href={link} {...props}>
+                  {children}
+                </a>
+              )
+            }
+
+            const [pathPart, hashPart] = link.split('#')
+            const resolvedPath = resolveAgainstCurrentFile(pathPart, currentFile)
+            const isMarkdownLink = looksLikeMarkdownPath(pathPart)
+
+            if (!isMarkdownLink) {
+              let assetHref = `/api/asset?path=${encodeURIComponent(pathPart)}`
+              if (currentFile) {
+                assetHref += `&base=${encodeURIComponent(currentFile)}`
+              }
+              if (hashPart) {
+                assetHref += `#${hashPart}`
+              }
+              return (
+                <a href={assetHref} {...props}>
+                  {children}
+                </a>
+              )
+            }
+
+            const handleClick = (e: ReactMouseEvent<HTMLAnchorElement>) => {
+              e.preventDefault()
+              if (!resolvedPath || !onNavigateToFile) return
+              onNavigateToFile(resolvedPath)
+              if (hashPart) {
+                window.location.hash = hashPart
+              }
+            }
+
+            return (
+              <a href={`?path=${encodeURIComponent(resolvedPath)}`} onClick={handleClick} {...props}>
+                {children}
+              </a>
+            )
+          },
           // 处理图片
           img: ({ src, alt }) => {
-            // 如果是相对路径，转换为 API 请求
-            if (src && !src.startsWith('http') && !src.startsWith('/')) {
-              src = `/api/asset?path=${encodeURIComponent(src)}`
+            let imageSrc = src
+            if (src && !isExternalUrl(src)) {
+              imageSrc = `/api/asset?path=${encodeURIComponent(src)}`
+              if (currentFile) {
+                imageSrc += `&base=${encodeURIComponent(currentFile)}`
+              }
             }
-            return <img src={src} alt={alt} className="rounded-lg" />
+            return <img src={imageSrc} alt={alt} className="rounded-lg" />
           },
         }}
       >

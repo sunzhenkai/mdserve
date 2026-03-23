@@ -172,6 +172,7 @@ func (s *Server) setupRoutes() {
 	{
 		api.GET("/files", s.handleGetFiles)
 		api.GET("/file", s.handleGetFile)
+		api.GET("/asset", s.handleGetAsset)
 		api.GET("/search", s.handleSearch)
 		api.GET("/config", s.handleGetConfig)
 		api.GET("/menu", s.handleGetMenu)

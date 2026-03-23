@@ -315,6 +315,37 @@ body {
   padding: 0;
 }
 
+/* Mermaid 图表容器 */
+.mermaid-container {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in oklch, var(--border) 85%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in oklch, var(--muted) 30%, transparent);
+  overflow-x: auto;
+}
+
+.mermaid-diagram {
+  min-width: fit-content;
+}
+
+.mermaid-diagram svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-placeholder {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.mermaid-error {
+  color: color-mix(in oklch, var(--destructive) 75%, var(--foreground) 25%);
+  font-size: 0.875rem;
+}
+
 /* 搜索关键词高亮 */
 .search-highlight {
   background-color: oklch(0.9 0.15 85);

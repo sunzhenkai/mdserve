@@ -142,6 +142,20 @@ const user: User = {
 console.log(user);
 ```
 
+## Mermaid 文本画图
+
+使用 `mermaid` fenced code block 可以直接渲染流程图等图表：
+
+```mermaid
+flowchart TD
+    Start[开始] --> Parse[解析 Markdown]
+    Parse --> Detect{是否 mermaid 代码块?}
+    Detect -->|是| Render[渲染 Mermaid 图表]
+    Detect -->|否| Highlight[Shiki 代码高亮]
+    Render --> Output[输出渲染结果]
+    Highlight --> Output
+```
+
 ## 表格高级用法
 
 ### 对齐方式

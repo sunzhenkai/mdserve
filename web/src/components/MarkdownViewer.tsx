@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useRef, useMemo, useId } from 'react'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OutlineItem } from '@/types'
@@ -10,6 +10,79 @@ import { getHighlighter, loadLanguageIfNeeded, type Highlighter } from '@/lib/sh
 interface MarkdownViewerProps {
   content: string
   onOutlineChange?: (outline: OutlineItem[]) => void
+}
+
+function MermaidDiagram({ code }: { code: string }) {
+  const [svg, setSvg] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isRendering, setIsRendering] = useState(true)
+  const componentId = useId()
+
+  useEffect(() => {
+    let cancelled = false
+
+    const renderDiagram = async () => {
+      setIsRendering(true)
+      setError(null)
+
+      try {
+        const mermaidModule = await import('mermaid')
+        const mermaid = mermaidModule.default
+        const isDarkTheme = document.documentElement.classList.contains('dark')
+        const renderId = `mermaid-${componentId.replace(/[^a-zA-Z0-9_-]/g, '')}-${Date.now()}`
+
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: isDarkTheme ? 'dark' : 'default',
+        })
+
+        const { svg: renderedSvg } = await mermaid.render(renderId, code)
+        if (!cancelled) {
+          setSvg(renderedSvg)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '渲染 Mermaid 图表失败')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsRendering(false)
+        }
+      }
+    }
+
+    renderDiagram()
+
+    return () => {
+      cancelled = true
+    }
+  }, [code, componentId])
+
+  if (isRendering) {
+    return (
+      <div className="mermaid-container">
+        <div className="mermaid-placeholder">正在渲染 Mermaid 图表...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mermaid-container">
+        <div className="mermaid-error">Mermaid 渲染失败：{error}</div>
+        <pre className="my-3 rounded-md border border-border bg-muted/40 p-3 overflow-x-auto">
+          <code className="text-sm font-mono text-foreground">{code}</code>
+        </pre>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mermaid-container">
+      <div className="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />
+    </div>
+  )
 }
 
 // 代码块高亮组件
@@ -194,6 +267,9 @@ export function MarkdownViewer({ content, onOutlineChange }: MarkdownViewerProps
 
             // 即便没有显式语言标记，fenced code 也应按块级展示
             if (isBlockCode) {
+              if (language.toLowerCase() === 'mermaid') {
+                return <MermaidDiagram code={code} />
+              }
               if (highlighter) {
                 return (
                   <CodeHighlight

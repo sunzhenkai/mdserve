@@ -12,7 +12,7 @@ const NavigationMenu = React.forwardRef<
   <NavigationMenuPrimitive.Root
     ref={ref}
     className={cn(
-      "relative z-10 flex max-w-max flex-1 items-center justify-center",
+      "relative z-50 flex max-w-max flex-1 items-center justify-center",
       className
     )}
     {...props}
@@ -69,7 +69,7 @@ const NavigationMenuContent = React.forwardRef<
   <NavigationMenuPrimitive.Content
     ref={ref}
     className={cn(
-      "left-0 top-0 w-full data-[motion^=from-]:animate-[slide-in-from-top_0.2s_ease-out] data-[motion^=to-]:animate-[slide-out-to-top_0.2s_ease-in] data-[motion=from-end]:animate-[slide-in-from-right_0.2s_ease-out] data-[motion=from-start]:animate-[slide-in-from-left_0.2s_ease-out] data-[motion=to-end]:animate-[slide-out-to-right_0.2s_ease-in] data-[motion=to-start]:animate-[slide-out-to-left_0.2s_ease-in] md:absolute md:w-auto ",
+      "z-50 left-0 top-0 w-full data-[motion^=from-]:animate-[slide-in-from-top_0.2s_ease-out] data-[motion^=to-]:animate-[slide-out-to-top_0.2s_ease-in] data-[motion=from-end]:animate-[slide-in-from-right_0.2s_ease-out] data-[motion=from-start]:animate-[slide-in-from-left_0.2s_ease-out] data-[motion=to-end]:animate-[slide-out-to-right_0.2s_ease-in] data-[motion=to-start]:animate-[slide-out-to-left_0.2s_ease-in] md:absolute md:w-auto ",
       "data-[state=open]:animate-[fade-in_0.2s_ease-out]",
       className
     )}
@@ -84,7 +84,7 @@ const NavigationMenuViewport = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Viewport>,
   React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Viewport>
 >(({ className, ...props }, ref) => (
-  <div className={cn("absolute left-0 top-full flex justify-center")}>
+  <div className={cn("absolute left-0 top-full z-50 flex justify-center")}>
     <NavigationMenuPrimitive.Viewport
       className={cn(
         "origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg data-[state=open]:animate-[fade-in_0.2s_ease-out] data-[state=closed]:animate-[fade-out_0.15s_ease-in] md:w-[var(--radix-navigation-menu-viewport-width)]",

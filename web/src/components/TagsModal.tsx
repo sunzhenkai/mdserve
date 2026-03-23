@@ -33,18 +33,14 @@ export function TagsModal({
   initialTab,
   initialSelected
 }: TagsModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'tags')
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'categories')
   const [selectedItem, setSelectedItem] = useState<string | null>(initialSelected || null)
 
   // 当 initialTab 或 initialSelected 变化时更新状态
   useEffect(() => {
     if (open) {
-      if (initialTab) {
-        setActiveTab(initialTab)
-      }
-      if (initialSelected) {
-        setSelectedItem(initialSelected)
-      }
+      setActiveTab(initialTab || 'categories')
+      setSelectedItem(initialSelected || null)
     }
   }, [open, initialTab, initialSelected])
 
@@ -85,7 +81,7 @@ export function TagsModal({
           <div className="flex items-center gap-3 px-4 py-3 bg-background flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <h2 className="text-base font-semibold leading-none truncate">标签和分类</h2>
+              <h2 className="text-base font-semibold leading-none truncate">分类和标签</h2>
             </div>
 
             <div className="flex-1 flex justify-end min-w-0">

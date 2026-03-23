@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, ListPlus, ListMinus } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { OutlineItem } from '../types'
@@ -69,7 +69,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
     <div>
       <div
         className={cn(
-          "flex items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group min-w-0",
+          "flex w-max min-w-full items-center gap-1 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent hover:text-accent-foreground group",
           levelClass === 1 && "font-medium",
           levelClass >= 3 && "text-xs",
           levelClass >= 4 && "text-xs opacity-80"
@@ -91,7 +91,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
           <span className="w-4 h-4" />
         )}
         <span
-          className="min-w-0 flex-1 text-sm whitespace-nowrap overflow-x-auto mdserve-scrollbar-hidden"
+          className="text-sm whitespace-nowrap"
           onClick={handleClick}
         >
           {node.item.text}
@@ -211,7 +211,7 @@ export function Outline({ items }: OutlineProps) {
 
       {/* 目录内容 */}
       <ScrollArea className="flex-1">
-        <nav className="p-2">
+        <nav className="p-2 w-max min-w-full">
           {tree.map((node) => (
             <TreeNode
               key={node.item.slug}
@@ -222,6 +222,7 @@ export function Outline({ items }: OutlineProps) {
             />
           ))}
         </nav>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   )

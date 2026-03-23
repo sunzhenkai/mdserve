@@ -223,7 +223,7 @@ function AppContent() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="h-12 mx-4 mt-2 mb-2 flex items-center justify-between px-3 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
+      <header className="relative z-40 h-12 mx-4 mt-2 mb-2 flex items-center justify-between px-3 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
         {/* Left: Menu button (mobile) + Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
@@ -279,7 +279,7 @@ function AppContent() {
               variant="ghost"
               size="icon"
               onClick={() => setTagsModalOpen(true)}
-              title="查看标签和分类"
+              title="查看分类和标签"
             >
               <Tags className="h-4 w-4" />
             </Button>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus, Target } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { FileInfo } from '../types'
@@ -94,7 +94,7 @@ function TreeNode({
     <div className="tree-node">
       <div 
         className={cn(
-          "flex items-center gap-1 px-2 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent min-w-0",
+          "flex w-max min-w-full items-center gap-1 px-2 py-1.5 cursor-pointer rounded-md transition-colors hover:bg-accent",
           isSelected && "bg-accent text-accent-foreground"
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -114,7 +114,7 @@ function TreeNode({
             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </>
         )}
-        <span className="min-w-0 flex-1 text-sm whitespace-nowrap overflow-x-auto mdserve-scrollbar-hidden">
+        <span className="text-sm whitespace-nowrap">
           {item.name}
         </span>
       </div>
@@ -256,7 +256,7 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
 
       {/* 文件列表 */}
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2 w-max min-w-full">
           {sortedFiles.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-4">暂无文件</div>
           ) : (
@@ -274,6 +274,7 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
             ))
           )}
         </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   )

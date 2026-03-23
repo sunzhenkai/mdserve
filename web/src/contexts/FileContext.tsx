@@ -37,6 +37,23 @@ type FileContextValue = FileContextState & FileContextActions
 const FileContext = createContext<FileContextValue | null>(null)
 const QUERY_STALE_MS = 30 * 1000
 
+function decodePathParam(rawPath: string | null): string | null {
+  if (!rawPath) return null
+  let next = rawPath
+  // 兼容外部分享时出现的重复编码（例如 %25E5...）
+  for (let i = 0; i < 2; i += 1) {
+    if (!/%[0-9a-fA-F]{2}/.test(next)) break
+    try {
+      const decoded = decodeURIComponent(next)
+      if (decoded === next) break
+      next = decoded
+    } catch {
+      break
+    }
+  }
+  return next
+}
+
 export function FileProvider({ children }: { children: React.ReactNode }) {
   const [outline, setOutline] = useState<OutlineItem[]>([])
   const [searchParams, setSearchParams] = useSearchParams()
@@ -75,9 +92,20 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     staleTime: Infinity,
   })
 
-  const urlPath = searchParams.get('path')
+  const rawUrlPath = searchParams.get('path')
+  const urlPath = decodePathParam(rawUrlPath)
   const defaultDoc = configQuery.data?.defaultDoc || 'README.md'
   const currentFile = urlPath || (configQuery.isSuccess ? defaultDoc : null)
+
+  useEffect(() => {
+    if (!rawUrlPath || !urlPath) return
+    if (rawUrlPath === urlPath) return
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('path', urlPath)
+      return next
+    }, { replace: true })
+  }, [rawUrlPath, urlPath, setSearchParams])
 
   useEffect(() => {
     if (!urlPath && configQuery.isSuccess) {

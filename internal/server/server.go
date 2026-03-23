@@ -15,7 +15,7 @@ import (
 	"github.com/wii/mdserve/internal/watcher"
 )
 
-//go:embed static/*
+//go:embed all:static
 var staticFS embed.FS
 
 // MenuItem represents a menu item for the server

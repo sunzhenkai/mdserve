@@ -26,7 +26,7 @@ type FileContextState = {
 }
 
 type FileContextActions = {
-  loadFile: (path: string, updateUrl?: boolean) => Promise<void>
+  loadFile: (path: string, updateUrl?: boolean) => void
   handleFileSelect: (path: string) => void
   handleOutlineChange: (outline: OutlineItem[]) => void
   refreshFiles: () => void
@@ -109,11 +109,13 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!urlPath && configQuery.isSuccess) {
-      const next = new URLSearchParams(searchParams)
-      next.set('path', defaultDoc)
-      setSearchParams(next, { replace: true })
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.set('path', defaultDoc)
+        return next
+      }, { replace: true })
     }
-  }, [urlPath, defaultDoc, configQuery.isSuccess, searchParams, setSearchParams])
+  }, [urlPath, defaultDoc, configQuery.isSuccess, setSearchParams])
 
   const fileQuery = useQuery({
     queryKey: ['file', currentFile],
@@ -122,10 +124,9 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     ),
     enabled: Boolean(currentFile),
     staleTime: 5 * 1000,
-    placeholderData: previousData => previousData,
   })
 
-  // 如果服务端解析了目录路径为 README.md，同步更新 URL
+  // 如果服务端将目录路径解析为 README.md（如 docs/ → docs/README.md），同步更新 URL
   useEffect(() => {
     const resolvedPath = fileQuery.data?.resolvedPath
     if (!resolvedPath || !currentFile) return
@@ -138,7 +139,7 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fileQuery.data?.resolvedPath, currentFile, setSearchParams])
 
-  const loadFile = useCallback(async (path: string, updateUrl = true) => {
+  const loadFile = useCallback((path: string, updateUrl = true) => {
     if (!path) return
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)

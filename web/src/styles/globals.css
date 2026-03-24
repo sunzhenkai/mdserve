@@ -289,6 +289,8 @@ body {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   background-color: oklch(0.95 0 0);
   color: #d73a49;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .dark .inline-code,

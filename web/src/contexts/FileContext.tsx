@@ -26,7 +26,7 @@ type FileContextState = {
 }
 
 type FileContextActions = {
-  loadFile: (path: string, updateUrl?: boolean) => Promise<void>
+  loadFile: (path: string, updateUrl?: boolean) => void
   handleFileSelect: (path: string) => void
   handleOutlineChange: (outline: OutlineItem[]) => void
   refreshFiles: () => void
@@ -109,23 +109,37 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!urlPath && configQuery.isSuccess) {
-      const next = new URLSearchParams(searchParams)
-      next.set('path', defaultDoc)
-      setSearchParams(next, { replace: true })
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.set('path', defaultDoc)
+        return next
+      }, { replace: true })
     }
-  }, [urlPath, defaultDoc, configQuery.isSuccess, searchParams, setSearchParams])
+  }, [urlPath, defaultDoc, configQuery.isSuccess, setSearchParams])
 
   const fileQuery = useQuery({
     queryKey: ['file', currentFile],
-    queryFn: () => fetchJson<{ content?: string; tags?: string[]; categories?: string[] }>(
+    queryFn: () => fetchJson<{ content?: string; tags?: string[]; categories?: string[]; resolvedPath?: string }>(
       `/api/file?path=${encodeURIComponent(currentFile!)}`
     ),
     enabled: Boolean(currentFile),
     staleTime: 5 * 1000,
-    placeholderData: previousData => previousData,
   })
 
-  const loadFile = useCallback(async (path: string, updateUrl = true) => {
+  // 如果服务端将目录路径解析为 README.md（如 docs/ → docs/README.md），同步更新 URL
+  useEffect(() => {
+    const resolvedPath = fileQuery.data?.resolvedPath
+    if (!resolvedPath || !currentFile) return
+    if (resolvedPath !== currentFile) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.set('path', resolvedPath)
+        return next
+      }, { replace: true })
+    }
+  }, [fileQuery.data?.resolvedPath, currentFile, setSearchParams])
+
+  const loadFile = useCallback((path: string, updateUrl = true) => {
     if (!path) return
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)

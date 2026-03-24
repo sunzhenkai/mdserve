@@ -79,6 +79,29 @@ func (s *Server) handleGetFile(c *gin.Context) {
 		return
 	}
 
+	// If path is a directory, look for README.md (case-insensitive)
+	info, err := os.Stat(fullPath)
+	if err == nil && info.IsDir() {
+		entries, readErr := os.ReadDir(fullPath)
+		if readErr != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "directory not readable"})
+			return
+		}
+		found := false
+		for _, entry := range entries {
+			if !entry.IsDir() && strings.EqualFold(entry.Name(), "readme.md") {
+				relPath = path.Join(relPath, entry.Name())
+				fullPath = filepath.Join(fullPath, entry.Name())
+				found = true
+				break
+			}
+		}
+		if !found {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no README.md found in directory"})
+			return
+		}
+	}
+
 	// Read file
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -95,8 +118,9 @@ func (s *Server) handleGetFile(c *gin.Context) {
 	outline := markdown.ExtractOutline(cleanContent)
 
 	response := gin.H{
-		"content": cleanContent,
-		"outline": outline,
+		"content":      cleanContent,
+		"outline":      outline,
+		"resolvedPath": relPath,
 	}
 
 	// Add frontmatter data if exists

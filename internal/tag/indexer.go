@@ -7,22 +7,26 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/wii/mdserve/internal/ignore"
 )
 
 // Indexer manages tag and category indexing for markdown files
 type Indexer struct {
-	rootPath    string
-	tagMap      map[string][]string // tag -> list of document paths
-	categoryMap map[string][]string // category -> list of document paths
-	mu          sync.RWMutex
+	rootPath      string
+	tagMap        map[string][]string // tag -> list of document paths
+	categoryMap   map[string][]string // category -> list of document paths
+	ignoreMatcher *ignore.Matcher
+	mu            sync.RWMutex
 }
 
 // NewIndexer creates a new tag indexer
-func NewIndexer(rootPath string) *Indexer {
+func NewIndexer(rootPath string, ignorePatterns []string) *Indexer {
 	return &Indexer{
-		rootPath:    rootPath,
-		tagMap:      make(map[string][]string),
-		categoryMap: make(map[string][]string),
+		rootPath:      rootPath,
+		tagMap:        make(map[string][]string),
+		categoryMap:   make(map[string][]string),
+		ignoreMatcher: ignore.New(ignorePatterns),
 	}
 }
 
@@ -40,7 +44,17 @@ func (i *Indexer) Build() error {
 			return nil // Skip files that can't be accessed
 		}
 
+		// Get relative path for ignore checking
+		relPath, err := filepath.Rel(i.rootPath, path)
+		if err != nil {
+			return nil
+		}
+
+		// Skip ignored directories and files
 		if info.IsDir() {
+			if i.ignoreMatcher.ShouldIgnoreDir(relPath) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -49,14 +63,13 @@ func (i *Indexer) Build() error {
 			return nil
 		}
 
-		// Extract tags and categories from the file
-		tags, categories := i.extractMetadata(path)
-
-		// Get relative path
-		relPath, err := filepath.Rel(i.rootPath, path)
-		if err != nil {
+		// Skip ignored files
+		if i.ignoreMatcher.ShouldIgnoreFile(relPath) {
 			return nil
 		}
+
+		// Extract tags and categories from the file
+		tags, categories := i.extractMetadata(path)
 
 		// Add to tag map
 		for _, tag := range tags {

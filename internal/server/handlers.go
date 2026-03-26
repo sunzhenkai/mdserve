@@ -79,6 +79,12 @@ func (s *Server) handleGetFile(c *gin.Context) {
 		return
 	}
 
+	// Check if file is ignored
+	if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+		return
+	}
+
 	// If path is a directory, look for README.md (case-insensitive)
 	info, err := os.Stat(fullPath)
 	if err == nil && info.IsDir() {
@@ -152,6 +158,12 @@ func (s *Server) handleGetAsset(c *gin.Context) {
 		return
 	}
 
+	// Check if asset is ignored
+	if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
+		return
+	}
+
 	info, err := os.Stat(fullPath)
 	if err != nil || info.IsDir() {
 		c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
@@ -180,7 +192,23 @@ func (s *Server) handleSearch(c *gin.Context) {
 
 	// Walk through all markdown files
 	err := filepath.Walk(s.rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+		if err != nil {
+			return nil
+		}
+
+		// Get relative path for ignore checking
+		relPath, _ := filepath.Rel(s.rootPath, path)
+
+		// Skip ignored directories
+		if info.IsDir() {
+			if s.ignoreMatcher.ShouldIgnoreDir(relPath) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Skip ignored files
+		if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
 			return nil
 		}
 
@@ -203,7 +231,6 @@ func (s *Server) handleSearch(c *gin.Context) {
 		contentStr := string(content)
 
 		var matches []string
-		relPath, _ := filepath.Rel(s.rootPath, path)
 
 		// Check filename
 		if strings.Contains(strings.ToLower(info.Name()), query) {

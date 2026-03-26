@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/wii/mdserve/internal/ignore"
 	"github.com/wii/mdserve/internal/tag"
 	"github.com/wii/mdserve/internal/watcher"
 )
@@ -29,22 +30,24 @@ type MenuItem struct {
 
 // Config holds server configuration
 type Config struct {
-	Path       string
-	Host       string
-	Port       int
-	SiteName   string
-	DefaultDoc string
-	Menu       []MenuItem
+	Path           string
+	Host           string
+	Port           int
+	SiteName       string
+	DefaultDoc     string
+	Menu           []MenuItem
+	IgnorePatterns []string
 }
 
 // Server represents the markdown server
 type Server struct {
-	config     *Config
-	router     *gin.Engine
-	watcher    *watcher.Watcher
-	hub        *WebSocketHub
-	rootPath   string
-	tagIndexer *tag.Indexer
+	config        *Config
+	router        *gin.Engine
+	watcher       *watcher.Watcher
+	hub           *WebSocketHub
+	rootPath      string
+	tagIndexer    *tag.Indexer
+	ignoreMatcher *ignore.Matcher
 }
 
 // WebSocketHub manages WebSocket connections
@@ -129,25 +132,30 @@ func New(config *Config) (*Server, error) {
 			message := `{"type":"tree_reload"}`
 			hub.broadcast <- message
 		},
+		config.IgnorePatterns,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
+	// Create ignore matcher
+	ignoreMatcher := ignore.New(config.IgnorePatterns)
+
 	// Create tag indexer
-	tagIndexer := tag.NewIndexer(absPath)
+	tagIndexer := tag.NewIndexer(absPath, config.IgnorePatterns)
 	if err := tagIndexer.Build(); err != nil {
 		// Log warning but don't fail - tag indexing is optional
 		fmt.Printf("[WARN] Failed to build tag index: %v\n", err)
 	}
 
 	server := &Server{
-		config:     config,
-		router:     router,
-		watcher:    w,
-		hub:        hub,
-		rootPath:   absPath,
-		tagIndexer: tagIndexer,
+		config:        config,
+		router:        router,
+		watcher:       w,
+		hub:           hub,
+		rootPath:      absPath,
+		tagIndexer:    tagIndexer,
+		ignoreMatcher: ignoreMatcher,
 	}
 
 	// Setup routes
@@ -250,7 +258,11 @@ func (s *Server) scanDirectory(path, root string) ([]FileInfo, error) {
 		fullPath := filepath.Join(path, entry.Name())
 		relPath, _ := filepath.Rel(root, fullPath)
 
+		// Check ignore patterns for directories
 		if entry.IsDir() {
+			if s.ignoreMatcher.ShouldIgnoreDir(relPath) {
+				continue
+			}
 			// Scan subdirectory
 			children, err := s.scanDirectory(fullPath, root)
 			if err != nil {
@@ -266,6 +278,10 @@ func (s *Server) scanDirectory(path, root string) ([]FileInfo, error) {
 				})
 			}
 		} else if strings.HasSuffix(strings.ToLower(entry.Name()), ".md") {
+			// Check ignore patterns for files
+			if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
+				continue
+			}
 			files = append(files, FileInfo{
 				Name: entry.Name(),
 				Path: relPath,

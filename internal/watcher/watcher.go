@@ -6,30 +6,33 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/wii/mdserve/internal/ignore"
 )
 
 // Watcher watches for file changes
 type Watcher struct {
-	watcher      *fsnotify.Watcher
-	rootPath     string
-	onFileChange func(path string)
-	onTreeChange func()
-	done         chan struct{}
+	watcher       *fsnotify.Watcher
+	rootPath      string
+	onFileChange  func(path string)
+	onTreeChange  func()
+	ignoreMatcher *ignore.Matcher
+	done          chan struct{}
 }
 
 // New creates a new file watcher
-func New(rootPath string, onFileChange func(path string), onTreeChange func()) (*Watcher, error) {
+func New(rootPath string, onFileChange func(path string), onTreeChange func(), ignorePatterns []string) (*Watcher, error) {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Watcher{
-		watcher:      w,
-		rootPath:     rootPath,
-		onFileChange: onFileChange,
-		onTreeChange: onTreeChange,
-		done:         make(chan struct{}),
+		watcher:       w,
+		rootPath:      rootPath,
+		onFileChange:  onFileChange,
+		onTreeChange:  onTreeChange,
+		ignoreMatcher: ignore.New(ignorePatterns),
+		done:          make(chan struct{}),
 	}, nil
 }
 
@@ -49,6 +52,14 @@ func (w *Watcher) Stop() {
 }
 
 func (w *Watcher) addDir(path string) {
+	// Get relative path for ignore checking
+	relPath, _ := filepath.Rel(w.rootPath, path)
+
+	// Skip if directory matches ignore patterns
+	if relPath != "." && w.ignoreMatcher.ShouldIgnoreDir(relPath) {
+		return
+	}
+
 	// Add directory to watcher
 	w.watcher.Add(path)
 

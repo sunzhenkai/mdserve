@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wii/mdserve/internal/config"
+	"github.com/wii/mdserve/internal/diagram"
 	"github.com/wii/mdserve/internal/git"
 	"github.com/wii/mdserve/internal/server"
 )
@@ -113,13 +114,17 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// 6. Create server configuration
 	srvConfig := &server.Config{
-		Path:       cfg.Docs.Path,
-		Host:       cfg.Server.Host,
-		Port:       cfg.Server.Port,
-		SiteName:   cfg.Site.Name,
-		DefaultDoc: cfg.Site.DefaultDoc,
-		Footer:     cfg.Site.Footer,
-		Menu:       convertMenuItems(cfg.Menu),
+		Path:              cfg.Docs.Path,
+		Host:              cfg.Server.Host,
+		Port:              cfg.Server.Port,
+		SiteName:          cfg.Site.Name,
+		DefaultDoc:        cfg.Site.DefaultDoc,
+		Footer:            cfg.Site.Footer,
+		Menu:              convertMenuItems(cfg.Menu),
+		KrokiEnabled:      cfg.Diagrams.Kroki.Enabled,
+		KrokiURL:          cfg.Diagrams.Kroki.URL,
+		KrokiTimeout:      cfg.Diagrams.Kroki.Timeout,
+		KrokiCacheVersion: cfg.Diagrams.Kroki.CacheVersion,
 	}
 
 	// 7. Create and start server
@@ -133,6 +138,11 @@ func runServe(cmd *cobra.Command, args []string) {
 	if cfg.Site.Name != "" {
 		log.Printf("Site name: %s", cfg.Site.Name)
 	}
+
+	// Probe & print diagram engine status (non-blocking: Ping caps at 1s).
+	// Cache init already happened inside server.New() and would have been fatal.
+	status := diagram.ProbeStatus(cfg.Diagrams.Kroki.Enabled, cfg.Diagrams.Kroki.URL)
+	diagram.PrintEngineStatus(os.Stdout, status, cfg.Diagrams.Kroki.URL)
 
 	if err := srv.Start(); err != nil {
 		// Stop git puller before exiting

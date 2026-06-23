@@ -10,6 +10,7 @@
 - 🔍 **全文搜索** - 搜索文件名和内容
 - 🌓 **主题切换** - 支持亮色/暗色主题
 - 📑 **目录大纲** - 自动生成文档目录
+- 📊 **图表引擎** - Mermaid 开箱即用 + 自托管 Kroki 扩展 d2/plantuml/graphviz 等
 - ⚡ **实时刷新** - 文件修改后自动刷新浏览器
 - 📦 **单文件部署** - 前端资源嵌入二进制文件
 
@@ -66,6 +67,37 @@ mdserve serve ./docs --port 8080
 # 局域网访问
 mdserve serve ./docs --host 0.0.0.0
 ```
+
+## 图表引擎
+
+mdserve 支持 Mermaid 与 Kroki 两类图表渲染：
+
+- **Mermaid**（默认）：在浏览器端渲染，无需任何配置。在 Markdown 中使用 ` ```mermaid ` 代码块即可。
+- **Kroki**（可选）：通过自托管 [Kroki](https://kroki.io) 容器，解锁 d2 / plantuml / graphviz / structurizr 等数十种 DSL。
+
+启用 Kroki：
+
+```bash
+# 推荐：用仓库自带的 compose（完整覆盖白名单，含 excalidraw）
+docker compose -f docker-compose.kroki.yml up -d
+
+# 或单容器（不含 excalidraw）
+docker run -d --name kroki -p 8000:8000 yuzutech/kroki
+```
+
+在 `.mdserve.yaml` 中配置：
+
+```yaml
+diagrams:
+  kroki:
+    enabled: true
+    url: "http://localhost:8000"
+```
+
+重启 mdserve 后，启动日志会显示 `✓ ... via Kroki [已连接]`。随后在 Markdown 中即可使用 ` ```d2 `、` ```plantuml `、` ```dot ` 等代码块。
+
+> 别名兼容：`dot` → `graphviz`、`c4`/`c4model` → `structurizr`、`pu`/`puml` → `plantuml`。
+> 完整部署指南见 [docs/guide/diagrams.md](./docs/guide/diagrams.md)。
 
 ## 开发
 
@@ -131,6 +163,9 @@ make build-all
 
 ### GET /api/search?q=<query>
 搜索 Markdown 文件
+
+### POST /api/diagram
+图表渲染代理（需启用 `diagrams.kroki`）。请求体 `{engine, code}`，成功返回 `image/svg+xml`。
 
 ### WS /ws
 WebSocket 连接，用于实时刷新

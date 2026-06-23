@@ -11,11 +11,12 @@ import (
 
 // Config holds all configuration
 type Config struct {
-	Site   SiteConfig   `yaml:"site"`
-	Server ServerConfig `yaml:"server"`
-	Docs   DocsConfig   `yaml:"docs"`
-	Git    GitConfig    `yaml:"git"`
-	Menu   []MenuItem   `yaml:"menu"`
+	Site     SiteConfig     `yaml:"site"`
+	Server   ServerConfig   `yaml:"server"`
+	Docs     DocsConfig     `yaml:"docs"`
+	Git      GitConfig      `yaml:"git"`
+	Menu     []MenuItem     `yaml:"menu"`
+	Diagrams DiagramsConfig `yaml:"diagrams"`
 }
 
 // SiteConfig holds site-related configuration
@@ -44,6 +45,20 @@ type GitConfig struct {
 	Branch   string        `yaml:"branch"`
 }
 
+// DiagramsConfig holds diagram rendering configuration
+type DiagramsConfig struct {
+	Kroki KrokiConfig `yaml:"kroki"`
+}
+
+// KrokiConfig holds configuration for the self-hosted Kroki rendering gateway.
+// When Enabled is true, mdserve proxies diagram requests to URL.
+type KrokiConfig struct {
+	Enabled      bool          `yaml:"enabled"`       // 默认 false
+	URL          string        `yaml:"url"`           // Kroki 容器根 URL，如 http://localhost:8000
+	Timeout      time.Duration `yaml:"timeout"`       // 可选，默认 10s
+	CacheVersion int           `yaml:"cache_version"` // 可选，默认 1，变更后失效全部缓存
+}
+
 // MenuItem represents a menu item
 type MenuItem struct {
 	Title    string     `yaml:"title"`
@@ -68,6 +83,13 @@ func DefaultConfig() *Config {
 			Enabled:  false,
 			Interval: 5 * time.Minute,
 			Branch:   "main",
+		},
+		Diagrams: DiagramsConfig{
+			Kroki: KrokiConfig{
+				Enabled:      false,
+				Timeout:      10 * time.Second,
+				CacheVersion: 1,
+			},
 		},
 		Menu: []MenuItem{},
 	}
@@ -154,6 +176,17 @@ func (c *Config) Validate() error {
 	if c.Docs.Path == "" {
 		return fmt.Errorf("document path is required (via command line or config file)")
 	}
+	if c.Diagrams.Kroki.Enabled {
+		if c.Diagrams.Kroki.URL == "" {
+			return fmt.Errorf("diagrams.kroki.url is required when diagrams.kroki.enabled is true")
+		}
+		if c.Diagrams.Kroki.Timeout <= 0 {
+			c.Diagrams.Kroki.Timeout = 10 * time.Second
+		}
+		if c.Diagrams.Kroki.CacheVersion == 0 {
+			c.Diagrams.Kroki.CacheVersion = 1
+		}
+	}
 	return nil
 }
 
@@ -198,6 +231,21 @@ git:
   interval: "5m"
   # 分支名称
   branch: "main"
+
+# 图表引擎配置（可选）
+# Mermaid 始终开箱即用（浏览器端渲染），无需配置。
+# 如需支持 d2 / plantuml / graphviz 等更多 DSL，请自托管 Kroki 容器并启用：
+#   docker run -d -p 8000:8000 yuzutech/kroki
+diagrams:
+  kroki:
+    # 是否启用 Kroki 服务端渲染通路（默认 false）
+    enabled: false
+    # Kroki 容器根 URL（启用时必填）
+    url: "http://localhost:8000"
+    # 调用 Kroki 的超时时间（可选，默认 10s）
+    timeout: "10s"
+    # 缓存版本号，变更后失效全部缓存（可选，默认 1）
+    cache_version: 1
 
 # 菜单配置（可选）
 # 支持两级菜单结构

@@ -319,9 +319,11 @@ func extractContext(line, query string) string {
 // handleGetConfig returns the server configuration for the frontend
 func (s *Server) handleGetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"siteName":   s.config.SiteName,
-		"defaultDoc": s.config.DefaultDoc,
-		"footer":     s.config.Footer,
+		"siteName":     s.config.SiteName,
+		"defaultDoc":   s.config.DefaultDoc,
+		"footer":       s.config.Footer,
+		"krokiEnabled": s.config.KrokiEnabled,
+		"krokiUrl":     s.config.KrokiURL,
 	})
 }
 

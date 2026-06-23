@@ -25,17 +25,17 @@ info() {
 
 detect_os() {
   case "$(uname -s)" in
-    Linux) echo "linux" ;;
-    Darwin) echo "darwin" ;;
-    *) err "unsupported operating system: $(uname -s)" ;;
+  Linux) echo "linux" ;;
+  Darwin) echo "darwin" ;;
+  *) err "unsupported operating system: $(uname -s)" ;;
   esac
 }
 
 detect_arch() {
   case "$(uname -m)" in
-    x86_64 | amd64) echo "amd64" ;;
-    aarch64 | arm64) echo "arm64" ;;
-    *) err "unsupported architecture: $(uname -m)" ;;
+  x86_64 | amd64) echo "amd64" ;;
+  aarch64 | arm64) echo "arm64" ;;
+  *) err "unsupported architecture: $(uname -m)" ;;
   esac
 }
 
@@ -84,8 +84,8 @@ verify_checksum() {
 path_contains_dir() {
   local dir="$1"
   case ":$PATH:" in
-    *":$dir:"*) return 0 ;;
-    *) return 1 ;;
+  *":$dir:"*) return 0 ;;
+  *) return 1 ;;
   esac
 }
 

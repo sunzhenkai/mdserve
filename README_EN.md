@@ -81,7 +81,7 @@ make build
 mdserve serve /path/to/markdown/files
 ```
 
-After starting, visit http://localhost:3000
+After starting, visit <http://localhost:3000>
 
 ### Command Line Options
 
@@ -160,18 +160,18 @@ draft: false
 
 ### Supported Metadata Fields
 
-| Field | Description |
-|-------|-------------|
-| `title` | Document title |
-| `description` | Brief description |
-| `author` | Author name |
-| `date` | Creation date |
-| `lastmod` | Last modified date |
-| `tags` | List of tags |
-| `categories` | List of categories |
-| `draft` | Whether it's a draft |
-| `weight` | Sort weight |
-| `slug` | URL-friendly identifier |
+| Field         | Description             |
+| ------------- | ----------------------- |
+| `title`       | Document title          |
+| `description` | Brief description       |
+| `author`      | Author name             |
+| `date`        | Creation date           |
+| `lastmod`     | Last modified date      |
+| `tags`        | List of tags            |
+| `categories`  | List of categories      |
+| `draft`       | Whether it's a draft    |
+| `weight`      | Sort weight             |
+| `slug`        | URL-friendly identifier |
 
 ## Development
 
@@ -214,6 +214,7 @@ make build-all
 ## Tech Stack
 
 ### Backend
+
 - Go
 - Gin (Web Framework)
 - fsnotify (File Watcher)
@@ -221,6 +222,7 @@ make build-all
 - goldmark (Markdown Parser)
 
 ### Frontend
+
 - React 18
 - TypeScript
 - Vite
@@ -230,23 +232,29 @@ make build-all
 ## API Documentation
 
 ### GET /api/files
+
 Get file tree structure
 
 ### GET /api/file?path=<path>
+
 Get single file content and outline
 
 ### GET /api/search?q=<query>
+
 Search Markdown files
 
 ### POST /api/diagram
+
 Diagram rendering proxy (requires `diagrams.kroki` enabled). Body `{engine, code}`, returns `image/svg+xml` on success.
 
 ### WS /ws
+
 WebSocket connection for live reload
 
 ## Examples
 
 Check out the [example](./example) directory for sample documents demonstrating all features including:
+
 - Basic Markdown formatting
 - Tags and categories
 - Various document structures

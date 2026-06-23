@@ -80,7 +80,7 @@ make build
 mdserve serve /path/to/markdown/files
 ```
 
-启动后访问 http://localhost:3000
+启动后访问 <http://localhost:3000>
 
 ### 命令行参数
 
@@ -178,6 +178,7 @@ make build-all
 ## 技术栈
 
 ### 后端
+
 - Go
 - Gin (Web 框架)
 - fsnotify (文件监控)
@@ -185,6 +186,7 @@ make build-all
 - goldmark (Markdown 解析)
 
 ### 前端
+
 - React 18
 - TypeScript
 - Vite
@@ -194,18 +196,23 @@ make build-all
 ## API 文档
 
 ### GET /api/files
+
 获取文件树结构
 
 ### GET /api/file?path=<path>
+
 获取单个文件内容和目录大纲
 
 ### GET /api/search?q=<query>
+
 搜索 Markdown 文件
 
 ### POST /api/diagram
+
 图表渲染代理（需启用 `diagrams.kroki`）。请求体 `{engine, code}`，成功返回 `image/svg+xml`。
 
 ### WS /ws
+
 WebSocket 连接，用于实时刷新
 
 ## 许可证

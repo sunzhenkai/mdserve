@@ -1,8 +1,7 @@
-import { useLayoutEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { ensureSvgVisibleSize, measureDiagramSvg } from '@/lib/diagram/svgMeasure'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 
 interface DiagramPreviewDialogProps {
   svg: string
@@ -22,39 +21,42 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
   const fitScaleRef = useRef(1)
+  const [svgUrl, setSvgUrl] = useState('')
 
-  // 打开时自动计算 fit-to-screen 缩放（Kroki d2 等仅含 viewBox 的 SVG 需显式尺寸）
-  useLayoutEffect(() => {
-    const el = contentRef.current
-    if (!el) return
+  useEffect(() => {
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
+    setSvgUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [svg])
 
-    const fitToScreen = () => {
-      const { w, h } = measureDiagramSvg(el)
-      if (w <= 0 || h <= 0) return
-      ensureSvgVisibleSize(el, { w, h })
-      const pad = 96
-      const fit = Math.min((window.innerWidth - pad) / w, (window.innerHeight - pad) / h, 1.5)
-      fitScaleRef.current = fit
-      setScale(fit)
-      setOffset({ x: 0, y: 0 })
+  const calcFitScale = useCallback((naturalW: number, naturalH: number) => {
+    if (naturalW <= 0 || naturalH <= 0) return
+    const pad = 96
+    const fit = Math.min((window.innerWidth - pad) / naturalW, (window.innerHeight - pad) / naturalH, 1.5)
+    fitScaleRef.current = fit
+    setScale(fit)
+    setOffset({ x: 0, y: 0 })
+  }, [])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const delta = e.deltaY < 0 ? 0.15 : -0.15
+      setScale(prev => Math.min(5, Math.max(0.2, Number((prev + delta).toFixed(2)))))
     }
 
-    fitToScreen()
-    const raf = requestAnimationFrame(fitToScreen)
-    return () => cancelAnimationFrame(raf)
-  }, [svg])
+    viewport.addEventListener('wheel', handleWheel, { passive: false })
+    return () => viewport.removeEventListener('wheel', handleWheel)
+  }, [])
 
   const zoomIn = () => setScale(prev => Math.min(5, Number((prev + 0.25).toFixed(2))))
   const zoomOut = () => setScale(prev => Math.max(0.2, Number((prev - 0.25).toFixed(2))))
   const resetZoom = () => { setScale(fitScaleRef.current); setOffset({ x: 0, y: 0 }) }
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY < 0 ? 0.15 : -0.15
-    setScale(prev => Math.min(5, Math.max(0.2, Number((prev + delta).toFixed(2)))))
-  }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return
@@ -82,9 +84,12 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
         overlayClassName="bg-background/40 backdrop-blur-md"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogDescription className="sr-only">
+          使用鼠标滚轮或工具栏按钮缩放图表，拖拽可平移预览区域。
+        </DialogDescription>
         <div
+          ref={viewportRef}
           className={`relative h-full w-full overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-          onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -111,12 +116,19 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
 
           {/* SVG 内容 */}
           <div className="h-full w-full flex items-center justify-center">
-            <div
-              ref={contentRef}
-              className="select-none rounded-xl bg-card p-6 shadow-lg [&>svg]:block [&>svg]:max-w-none [&>svg]:h-auto"
-              style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center center' }}
-              dangerouslySetInnerHTML={{ __html: svg }}
-            />
+            {svgUrl && (
+              <img
+                src={svgUrl}
+                alt={title}
+                className="max-w-none select-none rounded-xl bg-card p-6 shadow-lg"
+                style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center center' }}
+                draggable={false}
+                onLoad={e => {
+                  const img = e.currentTarget
+                  calcFitScale(img.naturalWidth, img.naturalHeight)
+                }}
+              />
+            )}
           </div>
         </div>
       </DialogContent>

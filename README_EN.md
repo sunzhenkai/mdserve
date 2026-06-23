@@ -17,6 +17,44 @@ A real-time Markdown file server with a web interface for browsing and rendering
 
 ## Installation
 
+### One-click install (recommended)
+
+No Go / Node.js required — fetch the prebuilt binary via the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+```
+
+Install to a system directory (e.g. `/usr/local/bin`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
+```
+
+Install a specific version:
+
+```bash
+VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+```
+
+> Installs to `~/.local/bin` by default; the script will print a hint if that directory is not on your `PATH`.
+
+### Upgrade
+
+An existing mdserve can self-update to the latest release (queries GitHub Release, downloads, verifies SHA256, atomically replaces):
+
+```bash
+mdserve update                  # upgrade to the latest stable
+mdserve update --version v0.1.0 # install a specific version
+mdserve update --force          # reinstall the current version
+```
+
+Show the current version:
+
+```bash
+mdserve version
+```
+
 ### Build from Source
 
 ```bash
@@ -32,8 +70,8 @@ make build
 
 ### Requirements
 
-- Go 1.21+
-- Node.js 18+ (only required for building)
+- Prebuilt binary: no runtime dependencies
+- Building from source: Go 1.21+ and Node.js 18+ (only required for building)
 
 ## Usage
 

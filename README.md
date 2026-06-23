@@ -16,6 +16,44 @@
 
 ## 安装
 
+### 一键安装（推荐）
+
+无需 Go / Node.js 环境，通过安装脚本拉取预编译二进制：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+```
+
+安装到系统目录（如 `/usr/local/bin`）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
+```
+
+安装指定版本：
+
+```bash
+VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+```
+
+> 默认安装到 `~/.local/bin`，若该目录不在 `PATH` 中，脚本会提示如何添加。
+
+### 升级
+
+已安装的 mdserve 可自更新到最新版本（查询 GitHub Release、下载、SHA256 校验、原子替换）：
+
+```bash
+mdserve update                  # 升级到最新正式版
+mdserve update --version v0.1.0 # 安装指定版本
+mdserve update --force          # 强制重装当前版本
+```
+
+查看当前版本：
+
+```bash
+mdserve version
+```
+
 ### 从源码构建
 
 ```bash
@@ -31,8 +69,8 @@ make build
 
 ### 依赖
 
-- Go 1.21+
-- Node.js 18+ (仅构建时需要)
+- 预编译二进制：无运行时依赖
+- 从源码构建：Go 1.21+ 与 Node.js 18+（仅构建时需要）
 
 ## 使用
 

@@ -9,8 +9,12 @@ import (
 	"github.com/wii/mdserve/internal/config"
 	"github.com/wii/mdserve/internal/diagram"
 	"github.com/wii/mdserve/internal/git"
+	"github.com/wii/mdserve/internal/selfupdate"
 	"github.com/wii/mdserve/internal/server"
 )
+
+// Version is set at build time via -ldflags.
+var Version = "dev"
 
 var (
 	port       int
@@ -56,8 +60,66 @@ func main() {
 
 	configCmd.AddCommand(configInitCmd)
 
+	// Version command
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version of mdserve",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Fprintln(cmd.OutOrStdout(), Version)
+		},
+	}
+
+	// Update command
+	var (
+		updateVersion    string
+		updateInstallDir string
+		updateForce      bool
+		updateRepo       string
+	)
+
+	var updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Download and install the latest mdserve release",
+		Long: `Query GitHub Releases for the latest stable version and install the
+matching binary for the current platform.
+
+By default, mdserve is installed to the user's ~/.local/bin directory.
+Use --install-dir to override the destination.`,
+		Example: `  mdserve update
+  mdserve update --version v0.1.0
+  mdserve update --install-dir ~/.local/bin
+  mdserve update --force`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			result, err := selfupdate.Update(selfupdate.Options{
+				Repo:       updateRepo,
+				Version:    updateVersion,
+				InstallDir: updateInstallDir,
+				Current:    Version,
+				Force:      updateForce,
+				Out:        cmd.OutOrStdout(),
+			})
+			if err != nil {
+				return err
+			}
+			if result.AlreadyUpToDate {
+				return nil
+			}
+			if result.InstalledTo != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "Restart your shell or run %q to use the new version.\n", result.InstalledTo)
+			}
+			return nil
+		},
+	}
+
+	updateCmd.Flags().StringVar(&updateVersion, "version", "latest", "release tag to install (default: latest stable)")
+	updateCmd.Flags().StringVar(&updateInstallDir, "install-dir", "", "installation directory (default: ~/.local/bin)")
+	updateCmd.Flags().BoolVar(&updateForce, "force", false, "install even if the current version matches")
+	updateCmd.Flags().StringVar(&updateRepo, "repo", selfupdate.DefaultRepo, "GitHub repository in owner/name form")
+
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -50,7 +50,7 @@ func TestIsUpToDate(t *testing.T) {
 
 func TestFetchLatestRelease(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/repos/wii/mdserve/releases/latest" {
+		if r.URL.Path != "/repos/sunzhenkai/mdserve/releases/latest" {
 			http.NotFound(w, r)
 			return
 		}
@@ -66,7 +66,7 @@ func TestFetchLatestRelease(t *testing.T) {
 		return transport.RoundTrip(req)
 	})
 
-	tag, err := FetchLatestRelease("wii/mdserve", client)
+	tag, err := FetchLatestRelease("sunzhenkai/mdserve", client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestFetchLatestRelease(t *testing.T) {
 func TestUpdateAlreadyUpToDate(t *testing.T) {
 	var buf bytes.Buffer
 	result, err := Update(Options{
-		Repo:    "wii/mdserve",
+		Repo:    "sunzhenkai/mdserve",
 		Version: "v0.1.0",
 		Current: "v0.1.0",
 		Out:     &buf,
@@ -106,7 +106,7 @@ func TestUpdateInstallsRelease(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.URL.Path == "/repos/wii/mdserve/releases/latest":
+		case r.URL.Path == "/repos/sunzhenkai/mdserve/releases/latest":
 			_ = json.NewEncoder(w).Encode(releaseInfo{TagName: "v0.1.1"})
 		case strings.HasSuffix(r.URL.Path, "/"+asset):
 			w.Write(archiveBytes)
@@ -129,7 +129,7 @@ func TestUpdateInstallsRelease(t *testing.T) {
 	installDir := t.TempDir()
 	var buf bytes.Buffer
 	result, err := Update(Options{
-		Repo:       "wii/mdserve",
+		Repo:       "sunzhenkai/mdserve",
 		InstallDir: installDir,
 		Current:    "v0.1.0",
 		HTTPClient: client,

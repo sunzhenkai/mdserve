@@ -36,7 +36,7 @@ weight: 2
 
 ### 方法一：下载预编译版本
 
-访问 [GitHub Releases](https://github.com/wii/mdserve/releases) 页面，下载适合你系统的版本。
+访问 [GitHub Releases](https://github.com/sunzhenkai/mdserve/releases) 页面，下载适合你系统的版本。
 
 ```bash
 # Linux / macOS
@@ -51,7 +51,7 @@ sudo mv mdserve /usr/local/bin/
 
 ```bash
 # 克隆仓库
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 cd mdserve
 
 # 构建

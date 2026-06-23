@@ -21,19 +21,19 @@
 无需 Go / Node.js 环境，通过安装脚本拉取预编译二进制：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 安装到系统目录（如 `/usr/local/bin`）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
 ```
 
 安装指定版本：
 
 ```bash
-VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 > 默认安装到 `~/.local/bin`，若该目录不在 `PATH` 中，脚本会提示如何添加。
@@ -58,7 +58,7 @@ mdserve version
 
 ```bash
 # 克隆项目
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 cd mdserve
 
 # 构建

@@ -3,14 +3,14 @@ set -euo pipefail
 
 # mdserve one-click install script.
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 #
 # Environment variables:
-#   REPO         GitHub repository in owner/name form (default: wii/mdserve)
+#   REPO         GitHub repository in owner/name form (default: sunzhenkai/mdserve)
 #   VERSION      release tag to install, or "latest" (default: latest)
 #   INSTALL_DIR  destination directory (default: $HOME/.local/bin)
 
-REPO="${REPO:-wii/mdserve}"
+REPO="${REPO:-sunzhenkai/mdserve}"
 VERSION="${VERSION:-latest}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 

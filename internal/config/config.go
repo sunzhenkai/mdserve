@@ -193,7 +193,7 @@ func (c *Config) Validate() error {
 // ExampleConfig returns an example configuration with comments
 func ExampleConfig() string {
 	return `# mdserve 配置文件
-# 更多信息请参考: https://github.com/wii/mdserve
+# 更多信息请参考: https://github.com/sunzhenkai/mdserve
 
 # 网站配置
 site:

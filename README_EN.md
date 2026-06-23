@@ -22,19 +22,19 @@ A real-time Markdown file server with a web interface for browsing and rendering
 No Go / Node.js required — fetch the prebuilt binary via the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 Install to a system directory (e.g. `/usr/local/bin`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
 ```
 
 Install a specific version:
 
 ```bash
-VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 > Installs to `~/.local/bin` by default; the script will print a hint if that directory is not on your `PATH`.
@@ -59,7 +59,7 @@ mdserve version
 
 ```bash
 # Clone the repository
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 cd mdserve
 
 # Build

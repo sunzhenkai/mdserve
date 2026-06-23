@@ -54,11 +54,8 @@ function AppContent() {
   const hasSidebarContent = files.length > 0
   const hasOutlineContent = outline.length > 0
 
-  // 内容区滚动容器：空闲时隐藏滚动条，滚动时显示
   const contentScrollRef = useRef<HTMLDivElement>(null)
   const fullscreenScrollRef = useRef<HTMLDivElement>(null)
-  const contentScrollbarHideTimerRef = useRef<number | null>(null)
-  const fullscreenScrollbarHideTimerRef = useRef<number | null>(null)
   const prevFileRef = useRef<string | null>(null)
   const pendingTopScrollRef = useRef(false)
 
@@ -103,70 +100,6 @@ function AppContent() {
 
     return () => window.clearTimeout(timer)
   }, [loading, currentFile])
-
-  // 文章滚动条交互：不滚动自动隐藏；滚动时显示
-  useEffect(() => {
-    if (documentFullscreen) return
-    const el = contentScrollRef.current
-    if (!el) return
-
-    const hide = () => el.classList.add('mdserve-scrollbar-hidden')
-    const show = () => el.classList.remove('mdserve-scrollbar-hidden')
-
-    // 初始隐藏，避免页面刚加载就出现滚动条
-    hide()
-
-    const handleScroll = () => {
-      show()
-      if (contentScrollbarHideTimerRef.current) {
-        window.clearTimeout(contentScrollbarHideTimerRef.current)
-      }
-      contentScrollbarHideTimerRef.current = window.setTimeout(() => {
-        hide()
-      }, 700)
-    }
-
-    el.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      el.removeEventListener('scroll', handleScroll)
-      if (contentScrollbarHideTimerRef.current) {
-        window.clearTimeout(contentScrollbarHideTimerRef.current)
-        contentScrollbarHideTimerRef.current = null
-      }
-    }
-  }, [documentFullscreen, currentFile, loading])
-
-  useEffect(() => {
-    if (!documentFullscreen) return
-    const el = fullscreenScrollRef.current
-    if (!el) return
-
-    const hide = () => el.classList.add('mdserve-scrollbar-hidden')
-    const show = () => el.classList.remove('mdserve-scrollbar-hidden')
-
-    hide()
-
-    const handleScroll = () => {
-      show()
-      if (fullscreenScrollbarHideTimerRef.current) {
-        window.clearTimeout(fullscreenScrollbarHideTimerRef.current)
-      }
-      fullscreenScrollbarHideTimerRef.current = window.setTimeout(() => {
-        hide()
-      }, 700)
-    }
-
-    el.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      el.removeEventListener('scroll', handleScroll)
-      if (fullscreenScrollbarHideTimerRef.current) {
-        window.clearTimeout(fullscreenScrollbarHideTimerRef.current)
-        fullscreenScrollbarHideTimerRef.current = null
-      }
-    }
-  }, [documentFullscreen, currentFile, loading])
 
   // 全屏：监听 ESC 退出 + 禁止底层滚动
   useEffect(() => {
@@ -401,7 +334,7 @@ function AppContent() {
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
-                    className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative mdserve-scrollbar-hidden`}
+                    className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
                   >
                     {!hasDocumentInfo && (
                       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
@@ -593,7 +526,7 @@ function AppContent() {
 
               <div
                 ref={fullscreenScrollRef}
-                className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative mdserve-scrollbar-hidden`}
+                className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
               >
                 {!hasDocumentInfo && (
                   <div className="absolute top-3 right-3 z-10 flex items-center gap-1">

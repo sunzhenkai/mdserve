@@ -165,12 +165,19 @@ func runServe(cmd *cobra.Command, args []string) {
 	// 5. Setup git puller if configured
 	var gitPuller *git.Puller
 	if cfg.Git.Enabled {
-		if git.IsGitRepo(cfg.Docs.Path) {
+		ready, err := git.EnsureRepo(git.SyncOptions{
+			Path:   cfg.Docs.Path,
+			URL:    cfg.Git.URL,
+			Branch: cfg.Git.Branch,
+		})
+		if err != nil {
+			log.Printf("[WARN] Git setup failed: %v", err)
+		} else if ready {
 			gitPuller = git.NewPuller(cfg.Docs.Path, cfg.Git.Interval, cfg.Git.Branch)
 			gitPuller.Start()
 			log.Printf("Git auto-pull enabled: interval=%v, branch=%s", cfg.Git.Interval, cfg.Git.Branch)
 		} else {
-			log.Printf("[WARN] Git pull configured but %s is not a git repository", cfg.Docs.Path)
+			log.Printf("[WARN] Git pull configured but %s is not a git repository (set git.url to clone automatically)", cfg.Docs.Path)
 		}
 	}
 

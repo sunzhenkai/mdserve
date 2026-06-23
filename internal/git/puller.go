@@ -2,9 +2,6 @@ package git
 
 import (
 	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"time"
 )
 
@@ -14,16 +11,6 @@ type Puller struct {
 	interval time.Duration
 	branch   string
 	stopCh   chan struct{}
-}
-
-// IsGitRepo checks if the path is a git repository
-func IsGitRepo(path string) bool {
-	gitDir := filepath.Join(path, ".git")
-	info, err := os.Stat(gitDir)
-	if err != nil {
-		return false
-	}
-	return info.IsDir()
 }
 
 // NewPuller creates a new puller instance
@@ -65,16 +52,26 @@ func (p *Puller) Stop() {
 
 // pull performs a git pull operation using the git command
 func (p *Puller) pull() {
-	// Use git command for simplicity
-	// This is more reliable than go-git for most use cases
-	cmd := exec.Command("git", "pull", "--ff-only", "origin", p.branch)
-	cmd.Dir = p.repoPath
+	log.Printf("[INFO] Git pull: path=%s, branch=%s", p.repoPath, p.branch)
 
-	output, err := cmd.CombinedOutput()
+	output, err := runGit(p.repoPath, "pull", "--ff-only", "origin", p.branch)
 	if err != nil {
-		log.Printf("[WARN] Git pull failed: %v, output: %s", err, string(output))
+		log.Printf("[WARN] Git pull failed: path=%s, branch=%s, err=%v, output: %s",
+			p.repoPath, p.branch, err, trimOutput(output))
 		return
 	}
 
-	log.Printf("[INFO] Git pull successful: %s", string(output))
+	if len(output) == 0 {
+		log.Printf("[INFO] Git pull successful: path=%s, branch=%s, result=already up to date", p.repoPath, p.branch)
+		return
+	}
+
+	log.Printf("[INFO] Git pull successful: path=%s, branch=%s, output: %s",
+		p.repoPath, p.branch, trimOutput(output))
+}
+
+// PullOnce performs a single git pull; exposed for tests.
+func PullOnce(repoPath, branch string) error {
+	_, err := runGit(repoPath, "pull", "--ff-only", "origin", branch)
+	return err
 }

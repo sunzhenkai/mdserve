@@ -41,6 +41,7 @@ type DocsConfig struct {
 // GitConfig holds git pull configuration
 type GitConfig struct {
 	Enabled  bool          `yaml:"enabled"`
+	URL      string        `yaml:"url"` // 远程仓库地址，目录不存在时自动克隆（支持 SSH）
 	Interval time.Duration `yaml:"interval"`
 	Branch   string        `yaml:"branch"`
 }
@@ -227,6 +228,8 @@ docs:
 git:
   # 是否启用自动拉取
   enabled: false
+  # 远程仓库地址；文档目录不存在或非 git 仓库时会尝试克隆（支持 SSH 私有仓库）
+  # url: "git@github.com:owner/private-docs.git"
   # 拉取间隔，支持格式：30s, 5m, 1h 等
   interval: "5m"
   # 分支名称

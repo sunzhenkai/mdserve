@@ -33,14 +33,14 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Run tests (gate)
-        run: go test ./...
-
-      - name: Build frontend (embedded into binary)
+      - name: Build frontend (required for go:embed)
         run: |
           cd web
           npm ci
           npm run build
+
+      - name: Run tests (gate)
+        run: go test ./...
 
       - name: Resolve version
         id: version

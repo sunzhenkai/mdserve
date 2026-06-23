@@ -5,7 +5,8 @@ import { useEffect, useState, useRef, type MouseEvent as ReactMouseEvent } from 
 import { OutlineItem } from '@/types'
 import { getHighlighter, type Highlighter } from '@/lib/shiki'
 import { isExternalUrl, resolveAgainstCurrentFile, looksLikeMarkdownPath } from '@/lib/markdownUtils'
-import { MermaidDiagram } from '@/components/MermaidDiagram'
+import { resolveDiagramLanguage } from '@/lib/diagram/engineRegistry'
+import { DiagramBlock } from '@/components/diagram/DiagramBlock'
 import { CodeHighlight } from '@/components/CodeHighlight'
 import { ImagePreviewDialog } from '@/components/ImagePreviewDialog'
 
@@ -96,8 +97,10 @@ export function MarkdownViewer({ content, currentFile, showSource = false, onNav
                 return <code className="inline-code">{children}</code>
               }
 
-              if (language.toLowerCase() === 'mermaid') {
-                return <MermaidDiagram code={code} />
+              // Diagram dispatch: mermaid (client) + Kroki engines (server).
+              // resolveDiagramLanguage applies aliases (dot→graphviz, c4→structurizr, …).
+              if (resolveDiagramLanguage(language)) {
+                return <DiagramBlock language={language} code={code} />
               }
 
               if (highlighter) {

@@ -8,9 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	apipkg "github.com/wii/mdserve/internal/api"
+	"github.com/wii/mdserve/internal/diagram"
 	"github.com/wii/mdserve/internal/ignore"
 	"github.com/wii/mdserve/internal/tag"
 	"github.com/wii/mdserve/internal/watcher"
@@ -38,6 +41,11 @@ type Config struct {
 	Footer         string
 	Menu           []MenuItem
 	IgnorePatterns []string
+	// Diagrams configures the optional Kroki rendering gateway.
+	KrokiEnabled      bool
+	KrokiURL          string
+	KrokiTimeout      time.Duration
+	KrokiCacheVersion int
 }
 
 // Server represents the markdown server
@@ -49,6 +57,7 @@ type Server struct {
 	rootPath      string
 	tagIndexer    *tag.Indexer
 	ignoreMatcher *ignore.Matcher
+	diagramCache  *diagram.Cache
 }
 
 // WebSocketHub manages WebSocket connections
@@ -149,6 +158,14 @@ func New(config *Config) (*Server, error) {
 		fmt.Printf("[WARN] Failed to build tag index: %v\n", err)
 	}
 
+	// Build the diagram cache. Always initialize it (even when Kroki is
+	// disabled) so the directory exists; failures are fatal per the spec
+	// because a half-working cache is worse than a clean start.
+	diagramCache := diagram.NewCache(absPath, config.KrokiCacheVersion)
+	if err := diagramCache.Init(); err != nil {
+		return nil, fmt.Errorf("init diagram cache: %w", err)
+	}
+
 	server := &Server{
 		config:        config,
 		router:        router,
@@ -157,6 +174,7 @@ func New(config *Config) (*Server, error) {
 		rootPath:      absPath,
 		tagIndexer:    tagIndexer,
 		ignoreMatcher: ignoreMatcher,
+		diagramCache:  diagramCache,
 	}
 
 	// Setup routes
@@ -187,6 +205,18 @@ func (s *Server) setupRoutes() {
 		api.GET("/menu", s.handleGetMenu)
 		api.GET("/tags", s.handleGetTags)
 	}
+
+	// Diagram rendering proxy (POST /api/diagram).
+	var krokiClient *diagram.KrokiClient
+	if s.config.KrokiEnabled {
+		krokiClient = diagram.NewKrokiClient(s.config.KrokiURL, s.config.KrokiTimeout)
+	}
+	diagramHandler := apipkg.NewDiagramHandler(apipkg.DiagramDeps{
+		Enabled: s.config.KrokiEnabled,
+		Client:  krokiClient,
+		Cache:   s.diagramCache,
+	})
+	diagramHandler.Register(s.router.Group("/api"))
 
 	// WebSocket route
 	s.router.GET("/ws", s.handleWebSocket)

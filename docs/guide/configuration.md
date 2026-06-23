@@ -173,6 +173,19 @@ tags:
 
 标签可以在菜单中使用 `type: tag` 来引用，系统会自动列出所有包含该标签的文档。
 
+## 图表引擎
+
+Mermaid 开箱即用（浏览器端渲染）。如需 d2 / plantuml / graphviz 等更多 DSL，可启用 Kroki 服务端渲染：
+
+```yaml
+diagrams:
+  kroki:
+    enabled: true
+    url: "http://localhost:8000"
+```
+
+完整部署指南见 [图表引擎部署指南](./diagrams.md)。
+
 ## 注意事项
 
 - 默认只监听本地回环地址 (127.0.0.1)

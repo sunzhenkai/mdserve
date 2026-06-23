@@ -7,9 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wii/mdserve/internal/config"
+	"github.com/wii/mdserve/internal/diagram"
 	"github.com/wii/mdserve/internal/git"
+	"github.com/wii/mdserve/internal/selfupdate"
 	"github.com/wii/mdserve/internal/server"
 )
+
+// Version is set at build time via -ldflags.
+var Version = "dev"
 
 var (
 	port       int
@@ -55,8 +60,66 @@ func main() {
 
 	configCmd.AddCommand(configInitCmd)
 
+	// Version command
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version of mdserve",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Fprintln(cmd.OutOrStdout(), Version)
+		},
+	}
+
+	// Update command
+	var (
+		updateVersion    string
+		updateInstallDir string
+		updateForce      bool
+		updateRepo       string
+	)
+
+	var updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Download and install the latest mdserve release",
+		Long: `Query GitHub Releases for the latest stable version and install the
+matching binary for the current platform.
+
+By default, mdserve is installed to the user's ~/.local/bin directory.
+Use --install-dir to override the destination.`,
+		Example: `  mdserve update
+  mdserve update --version v0.1.0
+  mdserve update --install-dir ~/.local/bin
+  mdserve update --force`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			result, err := selfupdate.Update(selfupdate.Options{
+				Repo:       updateRepo,
+				Version:    updateVersion,
+				InstallDir: updateInstallDir,
+				Current:    Version,
+				Force:      updateForce,
+				Out:        cmd.OutOrStdout(),
+			})
+			if err != nil {
+				return err
+			}
+			if result.AlreadyUpToDate {
+				return nil
+			}
+			if result.InstalledTo != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "Restart your shell or run %q to use the new version.\n", result.InstalledTo)
+			}
+			return nil
+		},
+	}
+
+	updateCmd.Flags().StringVar(&updateVersion, "version", "latest", "release tag to install (default: latest stable)")
+	updateCmd.Flags().StringVar(&updateInstallDir, "install-dir", "", "installation directory (default: ~/.local/bin)")
+	updateCmd.Flags().BoolVar(&updateForce, "force", false, "install even if the current version matches")
+	updateCmd.Flags().StringVar(&updateRepo, "repo", selfupdate.DefaultRepo, "GitHub repository in owner/name form")
+
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -113,13 +176,17 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// 6. Create server configuration
 	srvConfig := &server.Config{
-		Path:       cfg.Docs.Path,
-		Host:       cfg.Server.Host,
-		Port:       cfg.Server.Port,
-		SiteName:   cfg.Site.Name,
-		DefaultDoc: cfg.Site.DefaultDoc,
-		Footer:     cfg.Site.Footer,
-		Menu:       convertMenuItems(cfg.Menu),
+		Path:              cfg.Docs.Path,
+		Host:              cfg.Server.Host,
+		Port:              cfg.Server.Port,
+		SiteName:          cfg.Site.Name,
+		DefaultDoc:        cfg.Site.DefaultDoc,
+		Footer:            cfg.Site.Footer,
+		Menu:              convertMenuItems(cfg.Menu),
+		KrokiEnabled:      cfg.Diagrams.Kroki.Enabled,
+		KrokiURL:          cfg.Diagrams.Kroki.URL,
+		KrokiTimeout:      cfg.Diagrams.Kroki.Timeout,
+		KrokiCacheVersion: cfg.Diagrams.Kroki.CacheVersion,
 	}
 
 	// 7. Create and start server
@@ -133,6 +200,11 @@ func runServe(cmd *cobra.Command, args []string) {
 	if cfg.Site.Name != "" {
 		log.Printf("Site name: %s", cfg.Site.Name)
 	}
+
+	// Probe & print diagram engine status (non-blocking: Ping caps at 1s).
+	// Cache init already happened inside server.New() and would have been fatal.
+	status := diagram.ProbeStatus(cfg.Diagrams.Kroki.Enabled, cfg.Diagrams.Kroki.URL)
+	diagram.PrintEngineStatus(os.Stdout, status, cfg.Diagrams.Kroki.URL)
 
 	if err := srv.Start(); err != nil {
 		// Stop git puller before exiting

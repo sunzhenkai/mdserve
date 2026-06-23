@@ -1,5 +1,11 @@
 .PHONY: all build build-frontend build-backend clean install deps run test
 
+# Version is injected at build time via -ldflags. Falls back to "dev" when no
+# git tag is present (e.g. fresh clone before first release). The symbol is
+# "main.Version" because cmd/mdserve/main.go is package main.
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -ldflags "-X main.Version=$(VERSION)"
+
 # Default target
 all: build
 
@@ -15,7 +21,7 @@ build-frontend:
 # Build backend
 build-backend:
 	@echo "Building backend..."
-	go build -o bin/mdserve ./cmd/mdserve
+	go build $(LDFLAGS) -o bin/mdserve ./cmd/mdserve
 	@echo "Backend built successfully!"
 
 # Install frontend dependencies
@@ -54,10 +60,10 @@ test:
 # Build for multiple platforms
 build-all: build-frontend
 	@echo "Building for multiple platforms..."
-	GOOS=linux GOARCH=amd64 go build -o bin/mdserve-linux-amd64 ./cmd/mdserve
-	GOOS=darwin GOARCH=amd64 go build -o bin/mdserve-darwin-amd64 ./cmd/mdserve
-	GOOS=darwin GOARCH=arm64 go build -o bin/mdserve-darwin-arm64 ./cmd/mdserve
-	GOOS=windows GOARCH=amd64 go build -o bin/mdserve-windows-amd64.exe ./cmd/mdserve
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/mdserve-linux-amd64 ./cmd/mdserve
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o bin/mdserve-darwin-amd64 ./cmd/mdserve
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o bin/mdserve-darwin-arm64 ./cmd/mdserve
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o bin/mdserve-windows-amd64.exe ./cmd/mdserve
 	@echo "Multi-platform build complete!"
 
 # Development with frontend watch

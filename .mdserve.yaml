@@ -16,6 +16,17 @@ git:
   interval: "5m"
   branch: "main"
 
+# 图表引擎配置（可选）
+# Mermaid 始终开箱即用（浏览器端渲染），无需配置。
+# 如需支持 d2 / plantuml / graphviz 等更多 DSL，请自托管 Kroki 容器并启用：
+#   docker run -d -p 8000:8000 yuzutech/kroki
+diagrams:
+  kroki:
+    enabled: false
+    url: "http://localhost:8000"
+    timeout: "10s"
+    cache_version: 1
+
 # 菜单配置
 menu:
   - title: "指南"

@@ -1,0 +1,35 @@
+# 用于本地启动 Kroki 渲染服务的 docker compose 文件。
+# 完整覆盖 mdserve 图表白名单（含 excalidraw）。Mermaid 走浏览器端，无需 companion。
+#
+# 用法：
+#   启动：  docker compose -f docker-compose.kroki.yml up -d
+#   停止：  docker compose -f docker-compose.kroki.yml down
+#   日志：  docker compose -f docker-compose.kroki.yml logs -f kroki
+#
+# 启动后在 `.mdserve.yaml` 配置：
+#   diagrams:
+#     kroki:
+#       enabled: true
+#       url: "http://localhost:8000"
+
+services:
+  # Kroki 网关：内置 d2 / plantuml / structurizr / graphviz / wavedrom /
+  # nomnoml / bytefield / erd / pikchr / svgbob / blockdiag 系列引擎。
+  kroki:
+    image: yuzutech/kroki
+    container_name: kroki
+    depends_on:
+      - excalidraw
+    environment:
+      # 指向 companion 容器（compose 网络内服务名即主机名）
+      - KROKI_EXCALIDRAW_HOST=excalidraw
+    ports:
+      - "8042:8000"
+    restart: unless-stopped
+
+  # Excalidraw companion：yuzutech/kroki 主镜像不含 excalidraw 运行时，
+  # 需要独立 companion 容器。其余白名单引擎均已内置在主镜像中。
+  # 该容器无需对外暴露端口，仅由 kroki 在内部网络访问。
+  excalidraw:
+    image: yuzutech/kroki-excalidraw
+    restart: unless-stopped

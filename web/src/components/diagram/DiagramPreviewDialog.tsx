@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useLayoutEffect, useState, useRef } from 'react'
 import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { ensureSvgVisibleSize, measureDiagramSvg } from '@/lib/diagram/svgMeasure'
 
 interface DiagramPreviewDialogProps {
   svg: string
@@ -24,20 +25,25 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
   const contentRef = useRef<HTMLDivElement>(null)
   const fitScaleRef = useRef(1)
 
-  // 打开时自动计算 fit-to-screen 缩放
-  useEffect(() => {
+  // 打开时自动计算 fit-to-screen 缩放（Kroki d2 等仅含 viewBox 的 SVG 需显式尺寸）
+  useLayoutEffect(() => {
     const el = contentRef.current
     if (!el) return
-    const pad = 96
-    const vw = window.innerWidth - pad
-    const vh = window.innerHeight - pad
-    const w = el.scrollWidth
-    const h = el.scrollHeight
-    if (w > 0 && h > 0) {
-      const fit = Math.min(vw / w, vh / h, 1.5)
+
+    const fitToScreen = () => {
+      const { w, h } = measureDiagramSvg(el)
+      if (w <= 0 || h <= 0) return
+      ensureSvgVisibleSize(el, { w, h })
+      const pad = 96
+      const fit = Math.min((window.innerWidth - pad) / w, (window.innerHeight - pad) / h, 1.5)
       fitScaleRef.current = fit
       setScale(fit)
+      setOffset({ x: 0, y: 0 })
     }
+
+    fitToScreen()
+    const raf = requestAnimationFrame(fitToScreen)
+    return () => cancelAnimationFrame(raf)
   }, [svg])
 
   const zoomIn = () => setScale(prev => Math.min(5, Number((prev + 0.25).toFixed(2))))
@@ -107,7 +113,7 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
           <div className="h-full w-full flex items-center justify-center">
             <div
               ref={contentRef}
-              className="select-none rounded-xl bg-card p-6 shadow-lg [&_svg]:block [&_svg]:max-w-none [&_svg]:h-auto"
+              className="select-none rounded-xl bg-card p-6 shadow-lg [&>svg]:block [&>svg]:max-w-none [&>svg]:h-auto"
               style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center center' }}
               dangerouslySetInnerHTML={{ __html: svg }}
             />

@@ -20,7 +20,7 @@ tags: ["README"]
 
 ```bash
 # 克隆项目
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 
 # 构建
 make build

@@ -7,14 +7,14 @@
 ### 从源码构建
 
 ```bash
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 cd mdserve
 make build
 ```
 
 ### 下载预编译版本
 
-访问 [Releases](https://github.com/wii/mdserve/releases) 页面下载适合你系统的版本。
+访问 [Releases](https://github.com/sunzhenkai/mdserve/releases) 页面下载适合你系统的版本。
 
 ## 基本使用
 

@@ -21,19 +21,19 @@
 无需 Go / Node.js 环境，通过安装脚本拉取预编译二进制：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 安装到系统目录（如 `/usr/local/bin`）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
+curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | sudo INSTALL_DIR=/usr/local/bin bash
 ```
 
 安装指定版本：
 
 ```bash
-VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/wii/mdserve/main/scripts/install.sh | bash
+VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/sunzhenkai/mdserve/main/scripts/install.sh | bash
 ```
 
 > 默认安装到 `~/.local/bin`，若该目录不在 `PATH` 中，脚本会提示如何添加。
@@ -58,7 +58,7 @@ mdserve version
 
 ```bash
 # 克隆项目
-git clone https://github.com/wii/mdserve.git
+git clone https://github.com/sunzhenkai/mdserve.git
 cd mdserve
 
 # 构建
@@ -80,7 +80,7 @@ make build
 mdserve serve /path/to/markdown/files
 ```
 
-启动后访问 http://localhost:3000
+启动后访问 <http://localhost:3000>
 
 ### 命令行参数
 
@@ -178,6 +178,7 @@ make build-all
 ## 技术栈
 
 ### 后端
+
 - Go
 - Gin (Web 框架)
 - fsnotify (文件监控)
@@ -185,6 +186,7 @@ make build-all
 - goldmark (Markdown 解析)
 
 ### 前端
+
 - React 18
 - TypeScript
 - Vite
@@ -194,18 +196,23 @@ make build-all
 ## API 文档
 
 ### GET /api/files
+
 获取文件树结构
 
 ### GET /api/file?path=<path>
+
 获取单个文件内容和目录大纲
 
 ### GET /api/search?q=<query>
+
 搜索 Markdown 文件
 
 ### POST /api/diagram
+
 图表渲染代理（需启用 `diagrams.kroki`）。请求体 `{engine, code}`，成功返回 `image/svg+xml`。
 
 ### WS /ws
+
 WebSocket 连接，用于实时刷新
 
 ## 许可证

@@ -18,7 +18,7 @@ import (
 
 // DefaultRepo is the GitHub repository (owner/name) used when no repo is
 // configured. Override with the --repo flag or Options.Repo.
-const DefaultRepo = "wii/mdserve"
+const DefaultRepo = "sunzhenkai/mdserve"
 
 // binaryName is the executable name shipped inside each release archive.
 const binaryName = "mdserve"

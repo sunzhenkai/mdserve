@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils"
-import { MenuItem } from "@/types"
+import { cn } from "@/lib/utils";
+import { MenuItem } from "@/types";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -9,21 +9,21 @@ import {
   NavigationMenuTrigger,
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+} from "@/components/ui/navigation-menu";
 
 interface NavigationMenuProps {
-  items: MenuItem[]
-  onFileSelect: (path: string) => void
-  onTagSelect: (tag: string) => void
-  onCategorySelect: (category: string) => void
+  items: MenuItem[];
+  onFileSelect: (path: string) => void;
+  onTagSelect: (tag: string) => void;
+  onCategorySelect: (category: string) => void;
 }
 
 const submenuItemClassName = cn(
   "flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2",
   "text-sm outline-none transition-colors",
   "hover:bg-accent hover:text-accent-foreground",
-  "focus:bg-accent focus:text-accent-foreground"
-)
+  "focus:bg-accent focus:text-accent-foreground",
+);
 
 export function NavigationMenuWrapper({
   items,
@@ -33,19 +33,19 @@ export function NavigationMenuWrapper({
 }: NavigationMenuProps) {
   const handleLeafClick = (item: MenuItem) => {
     if (item.type === "doc" && item.path) {
-      onFileSelect(item.path)
+      onFileSelect(item.path);
     } else if (item.type === "tag" && item.tag) {
-      onTagSelect(item.tag)
+      onTagSelect(item.tag);
     } else if (item.type === "category" && item.path) {
-      onCategorySelect(item.path)
+      onCategorySelect(item.path);
     }
-  }
+  };
 
-  if (items.length === 0) return null
+  if (items.length === 0) return null;
 
   return (
     <NavigationMenu
-      className="hidden max-w-none flex-1 justify-start lg:flex"
+      className="hidden lg:flex"
       delayDuration={200}
       skipDelayDuration={300}
     >
@@ -84,10 +84,10 @@ export function NavigationMenuWrapper({
                 </button>
               </NavigationMenuLink>
             </NavigationMenuItem>
-          )
+          ),
         )}
       </NavigationMenuList>
       <NavigationMenuViewport />
     </NavigationMenu>
-  )
+  );
 }

@@ -1,21 +1,4 @@
-## Purpose
-
-定义桌面端导航菜单的交互行为与实现约束，确保 hover 子菜单稳定、定位跟随触发项，并通过 `@radix-ui/react-navigation-menu` 实现。
-## Requirements
-### Requirement: Navigation dropdown positioning
-下拉菜单面板 SHALL 定位在触发它的菜单项正下方，面板水平位置跟随触发项，而非固定在导航栏某一侧。实现 SHALL 使用 Navigation Menu 共享 Viewport，在 hover 交互下保持 trigger 与面板之间的 pointer 路径连续。
-
-#### Scenario: Hover on second menu item
-- **WHEN** 鼠标悬停在第二个有子菜单的导航项上
-- **THEN** 下拉面板出现在该菜单项的正下方，水平居中对齐
-
-#### Scenario: Hover switch between items
-- **WHEN** 鼠标从第一个子菜单项移动到第二个子菜单项
-- **THEN** 第一个下拉面板关闭，第二个下拉面板在第二个菜单项下方打开，菜单项不发生水平位移
-
-#### Scenario: No children menu item click
-- **WHEN** 点击没有子菜单的导航项
-- **THEN** 直接触发对应操作（打开文档、打开标签弹窗等），不出现下拉面板
+## ADDED Requirements
 
 ### Requirement: Hover submenu stability
 桌面端有子菜单的导航项 SHALL 使用 `@radix-ui/react-navigation-menu` 实现 hover 交互。当指针从触发项移入子菜单面板或子菜单项时，子菜单 SHALL 保持打开，不得出现闪烁或意外关闭。
@@ -43,3 +26,19 @@
 - **WHEN** 检查 `web/package.json` 依赖
 - **THEN** SHALL 包含 `@radix-ui/react-navigation-menu`
 
+## MODIFIED Requirements
+
+### Requirement: Navigation dropdown positioning
+下拉菜单面板 SHALL 定位在触发它的菜单项正下方，面板水平位置跟随触发项，而非固定在导航栏某一侧。实现 SHALL 使用 Navigation Menu 共享 Viewport，在 hover 交互下保持 trigger 与面板之间的 pointer 路径连续。
+
+#### Scenario: Hover on second menu item
+- **WHEN** 鼠标悬停在第二个有子菜单的导航项上
+- **THEN** 下拉面板出现在该菜单项的正下方，水平居中对齐
+
+#### Scenario: Hover switch between items
+- **WHEN** 鼠标从第一个子菜单项移动到第二个子菜单项
+- **THEN** 第一个下拉面板关闭，第二个下拉面板在第二个菜单项下方打开，菜单项不发生水平位移
+
+#### Scenario: No children menu item click
+- **WHEN** 点击没有子菜单的导航项
+- **THEN** 直接触发对应操作（打开文档、打开标签弹窗等），不出现下拉面板

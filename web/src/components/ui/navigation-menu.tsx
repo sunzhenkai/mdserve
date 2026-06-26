@@ -37,7 +37,17 @@ const NavigationMenuList = React.forwardRef<
 ))
 NavigationMenuList.displayName = NavigationMenuPrimitive.List.displayName
 
-const NavigationMenuItem = NavigationMenuPrimitive.Item
+const NavigationMenuItem = React.forwardRef<
+  React.ElementRef<typeof NavigationMenuPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Item>
+>(({ className, ...props }, ref) => (
+  <NavigationMenuPrimitive.Item
+    ref={ref}
+    className={cn("relative", className)}
+    {...props}
+  />
+))
+NavigationMenuItem.displayName = NavigationMenuPrimitive.Item.displayName
 
 const navigationMenuTriggerStyle = cva(
   "inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50"
@@ -67,7 +77,12 @@ const NavigationMenuContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.Content
     ref={ref}
-    className={cn("left-0 top-0 w-full md:absolute md:w-auto", className)}
+    className={cn(
+      "absolute left-0 top-full z-50 mt-1 w-max overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md",
+      "data-[state=open]:animate-[fade-in_0.15s_ease-out]",
+      "data-[state=closed]:animate-[fade-out_0.1s_ease-in]",
+      className
+    )}
     {...props}
   />
 ))

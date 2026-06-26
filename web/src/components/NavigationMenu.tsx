@@ -7,7 +7,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
@@ -87,7 +86,6 @@ export function NavigationMenuWrapper({
           ),
         )}
       </NavigationMenuList>
-      <NavigationMenuViewport />
     </NavigationMenu>
   );
 }

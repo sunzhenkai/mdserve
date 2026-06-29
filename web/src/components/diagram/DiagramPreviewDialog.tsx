@@ -1,12 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { ensureSvgVisibleSize, measureDiagramSvg } from '@/lib/diagram/svgMeasure'
 
 interface DiagramPreviewDialogProps {
   svg: string
   /** Title used for accessibility (includes the engine name). */
   title: string
+  /**
+   * Mermaid SVG embeds labels via `<foreignObject>`, which browsers refuse to
+   * paint inside `<img>` blob URLs. Kroki SVGs are plain vector markup and
+   * render reliably as blob-backed images (including viewBox-only d2 output).
+   */
+  embedMode?: 'inline' | 'img'
   onClose: () => void
 }
 
@@ -15,21 +22,31 @@ interface DiagramPreviewDialogProps {
  * previous Mermaid-only preview exactly (zoom buttons, wheel zoom, drag-pan,
  * fit-to-screen on open) so it works for every engine.
  */
-export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDialogProps) {
+export function DiagramPreviewDialog({
+  svg,
+  title,
+  embedMode = 'img',
+  onClose,
+}: DiagramPreviewDialogProps) {
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const fitScaleRef = useRef(1)
   const [svgUrl, setSvgUrl] = useState('')
 
   useEffect(() => {
+    if (embedMode !== 'img') {
+      setSvgUrl('')
+      return
+    }
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
     setSvgUrl(url)
     return () => URL.revokeObjectURL(url)
-  }, [svg])
+  }, [svg, embedMode])
 
   const calcFitScale = useCallback((naturalW: number, naturalH: number) => {
     if (naturalW <= 0 || naturalH <= 0) return
@@ -39,6 +56,24 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
     setScale(fit)
     setOffset({ x: 0, y: 0 })
   }, [])
+
+  // Inline SVG (Mermaid): measure DOM after paint; img mode uses onLoad instead.
+  useLayoutEffect(() => {
+    if (embedMode !== 'inline') return
+    const el = contentRef.current
+    if (!el) return
+
+    const fitToScreen = () => {
+      const { w, h } = measureDiagramSvg(el)
+      if (w <= 0 || h <= 0) return
+      ensureSvgVisibleSize(el, { w, h })
+      calcFitScale(w, h)
+    }
+
+    fitToScreen()
+    const raf = requestAnimationFrame(fitToScreen)
+    return () => cancelAnimationFrame(raf)
+  }, [svg, embedMode, calcFitScale])
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -75,6 +110,11 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
     isDraggingRef.current = false
     setIsDragging(false)
   }
+
+  const transformStyle = {
+    transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+    transformOrigin: 'center center',
+  } as const
 
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
@@ -116,18 +156,27 @@ export function DiagramPreviewDialog({ svg, title, onClose }: DiagramPreviewDial
 
           {/* SVG 内容 */}
           <div className="h-full w-full flex items-center justify-center">
-            {svgUrl && (
-              <img
-                src={svgUrl}
-                alt={title}
-                className="max-w-none select-none rounded-xl bg-card p-6 shadow-lg"
-                style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center center' }}
-                draggable={false}
-                onLoad={e => {
-                  const img = e.currentTarget
-                  calcFitScale(img.naturalWidth, img.naturalHeight)
-                }}
+            {embedMode === 'inline' ? (
+              <div
+                ref={contentRef}
+                className="select-none rounded-xl bg-card p-6 shadow-lg [&>svg]:block [&>svg]:max-w-none [&>svg]:h-auto"
+                style={transformStyle}
+                dangerouslySetInnerHTML={{ __html: svg }}
               />
+            ) : (
+              svgUrl && (
+                <img
+                  src={svgUrl}
+                  alt={title}
+                  className="max-w-none select-none rounded-xl bg-card p-6 shadow-lg"
+                  style={transformStyle}
+                  draggable={false}
+                  onLoad={e => {
+                    const img = e.currentTarget
+                    calcFitScale(img.naturalWidth, img.naturalHeight)
+                  }}
+                />
+              )
             )}
           </div>
         </div>

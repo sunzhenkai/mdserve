@@ -213,6 +213,7 @@ export function Diagram({ code, renderer }: DiagramProps) {
         <DiagramPreviewDialog
           svg={svg}
           title={`${renderer.engine} 图表预览`}
+          embedMode={renderer.engine === 'mermaid' ? 'inline' : 'img'}
           onClose={() => setIsPreviewOpen(false)}
         />
       )}

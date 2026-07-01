@@ -120,8 +120,8 @@ export function DiagramPreviewDialog({
     <Dialog open onOpenChange={open => !open && onClose()}>
       <DialogContent
         hideClose
-        className="!inset-0 !translate-x-0 !translate-y-0 w-screen max-w-none h-screen max-h-none rounded-none p-0 border-0 bg-card/70 backdrop-blur-2xl shadow-none"
-        overlayClassName="bg-background/40 backdrop-blur-md"
+        className="!z-[70] !inset-0 !translate-x-0 !translate-y-0 w-screen max-w-none h-screen max-h-none rounded-none p-0 border-0 bg-card/70 backdrop-blur-2xl shadow-none"
+        overlayClassName="bg-background/40 backdrop-blur-md !z-[70]"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">

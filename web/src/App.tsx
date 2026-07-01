@@ -1,10 +1,11 @@
-import { Menu, List, ChevronLeft, ChevronRight, Tags, Search, Maximize2, Minimize2, Download, FileCode2 } from 'lucide-react'
+import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { Outline } from './components/Outline'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TagsModal } from './components/TagsModal'
 import { DocumentInfo } from './components/DocumentInfo'
+import { DocumentToolbar } from './components/DocumentToolbar'
 import { Footer } from './components/Footer'
 import { NavigationMenuWrapper } from './components/NavigationMenu'
 import { SearchModal } from './components/SearchModal'
@@ -291,34 +292,14 @@ function AppContent() {
                   {/* Meta header — 放在滚动容器外，不受滚动条占位影响，始终撑满卡片宽度 */}
                   {hasDocumentInfo && (
                     <div className="relative bg-point-soft py-2 px-4 border-b border-border/70 flex-shrink-0">
-                      <div className="absolute top-1/2 right-3 -translate-y-1/2 z-10 flex items-center gap-1">
-                        <button
-                          onClick={() => setDocumentSourceVisible(prev => !prev)}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title={documentSourceVisible ? '查看渲染' : '查看源码'}
-                        >
-                          <FileCode2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={handleDownload}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title="下载文档"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDocumentFullscreen(true)}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title="全屏"
-                        >
-                          <Maximize2 className="h-3.5 w-3.5" />
-                        </button>
+                      <div className="absolute top-1/2 right-3 -translate-y-1/2 z-10">
+                        <DocumentToolbar
+                          content={content}
+                          documentSourceVisible={documentSourceVisible}
+                          onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
+                          onDownload={handleDownload}
+                          onToggleFullscreen={() => setDocumentFullscreen(true)}
+                        />
                       </div>
 
                       <DocumentInfo
@@ -337,34 +318,14 @@ function AppContent() {
                     className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
                   >
                     {!hasDocumentInfo && (
-                      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
-                        <button
-                          onClick={() => setDocumentSourceVisible(prev => !prev)}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title={documentSourceVisible ? '查看渲染' : '查看源码'}
-                        >
-                          <FileCode2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={handleDownload}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title="下载文档"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDocumentFullscreen(true)}
-                          className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                     border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                     opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                          title="全屏"
-                        >
-                          <Maximize2 className="h-3.5 w-3.5" />
-                        </button>
+                      <div className="absolute top-3 right-3 z-10">
+                        <DocumentToolbar
+                          content={content}
+                          documentSourceVisible={documentSourceVisible}
+                          onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
+                          onDownload={handleDownload}
+                          onToggleFullscreen={() => setDocumentFullscreen(true)}
+                        />
                       </div>
                     )}
 
@@ -484,34 +445,15 @@ function AppContent() {
               {/* Meta header — 放在滚动容器外，不受滚动条占位影响，始终撑满卡片宽度 */}
               {hasDocumentInfo && (
                 <div className="relative bg-point-soft py-2 px-4 border-b border-border/70 flex-shrink-0">
-                  <div className="absolute top-1/2 right-3 -translate-y-1/2 z-10 flex items-center gap-1">
-                    <button
-                      onClick={() => setDocumentSourceVisible(prev => !prev)}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title={documentSourceVisible ? '查看渲染' : '查看源码'}
-                    >
-                      <FileCode2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={handleDownload}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title="下载文档"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDocumentFullscreen(false)}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title="退出全屏 (Esc)"
-                    >
-                      <Minimize2 className="h-3.5 w-3.5" />
-                    </button>
+                  <div className="absolute top-1/2 right-3 -translate-y-1/2 z-10">
+                    <DocumentToolbar
+                      content={content}
+                      documentSourceVisible={documentSourceVisible}
+                      onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
+                      onDownload={handleDownload}
+                      fullscreen
+                      onToggleFullscreen={() => setDocumentFullscreen(false)}
+                    />
                   </div>
 
                   <DocumentInfo
@@ -529,34 +471,15 @@ function AppContent() {
                 className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
               >
                 {!hasDocumentInfo && (
-                  <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
-                    <button
-                      onClick={() => setDocumentSourceVisible(prev => !prev)}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title={documentSourceVisible ? '查看渲染' : '查看源码'}
-                    >
-                      <FileCode2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={handleDownload}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title="下载文档"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDocumentFullscreen(false)}
-                      className="p-1 rounded-md bg-background/70 backdrop-blur-sm
-                                 border border-border/60 hover:bg-accent hover:text-accent-foreground
-                                 opacity-60 hover:opacity-100 transition-opacity transition-colors cursor-pointer"
-                      title="退出全屏 (Esc)"
-                    >
-                      <Minimize2 className="h-3.5 w-3.5" />
-                    </button>
+                  <div className="absolute top-3 right-3 z-10">
+                    <DocumentToolbar
+                      content={content}
+                      documentSourceVisible={documentSourceVisible}
+                      onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
+                      onDownload={handleDownload}
+                      fullscreen
+                      onToggleFullscreen={() => setDocumentFullscreen(false)}
+                    />
                   </div>
                 )}
 

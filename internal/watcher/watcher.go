@@ -9,6 +9,13 @@ import (
 	"github.com/wii/mdserve/internal/ignore"
 )
 
+func isDocumentFile(name string) bool {
+	lower := strings.ToLower(name)
+	return strings.HasSuffix(lower, ".md") ||
+		strings.HasSuffix(lower, ".html") ||
+		strings.HasSuffix(lower, ".htm")
+}
+
 // Watcher watches for file changes
 type Watcher struct {
 	watcher       *fsnotify.Watcher
@@ -90,9 +97,9 @@ func (w *Watcher) watch() {
 			// Debug logging (uncomment if needed)
 			// fmt.Printf("[DEBUG] Event: %s %v\n", event.Name, event.Op)
 
-			// Handle file changes (write events for .md files)
+			// Handle file changes (write events for document files)
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				if strings.HasSuffix(strings.ToLower(event.Name), ".md") {
+				if isDocumentFile(event.Name) {
 					w.onFileChange(event.Name)
 					// Also trigger tree change in case file was just created
 					w.onTreeChange()
@@ -110,8 +117,8 @@ func (w *Watcher) watch() {
 					// New directory created - add to watcher and notify tree change
 					w.addDir(event.Name)
 					w.onTreeChange()
-				} else if strings.HasSuffix(strings.ToLower(event.Name), ".md") {
-					// New .md file created
+				} else if isDocumentFile(event.Name) {
+					// New document file created
 					w.onFileChange(event.Name)
 					w.onTreeChange()
 				}
@@ -120,14 +127,14 @@ func (w *Watcher) watch() {
 			// Handle remove and rename events
 			if event.Op&fsnotify.Remove == fsnotify.Remove ||
 				event.Op&fsnotify.Rename == fsnotify.Rename {
-				// Check if it's a .md file by name (file may not exist anymore)
-				isMdFile := strings.HasSuffix(strings.ToLower(event.Name), ".md")
+				// Check if it's a document file by name (file may not exist anymore)
+				isDocFile := isDocumentFile(event.Name)
 
 				// Try to check if it's a directory (may fail if file is gone)
 				info, err := os.Stat(event.Name)
 				isDir := err == nil && info.IsDir()
 
-				if isDir || isMdFile {
+				if isDir || isDocFile {
 					w.onTreeChange()
 				}
 			}

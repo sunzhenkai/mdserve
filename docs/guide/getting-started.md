@@ -59,4 +59,5 @@ mdserve serve /path/to/docs --host 0.0.0.0
 ## 下一步
 
 - [配置选项](./configuration.md)
+- [HTML 文档支持](./html.md)
 - [API 文档](../api/endpoints.md)

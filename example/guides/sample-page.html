@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>HTML 示例页面</title>
+  <style>
+    .highlight { background: #fff3cd; padding: 0.2em 0.4em; border-radius: 4px; }
+    .note { border-left: 4px solid #6b7280; padding-left: 1rem; color: #4b5563; }
+  </style>
+</head>
+<body>
+  <h1>HTML 文档示例</h1>
+  <p class="note">此页面演示 mdserve 对 HTML 文档的渲染能力。</p>
+
+  <h2 id="features">功能特性</h2>
+  <ul>
+    <li>安全净化渲染（无 JavaScript 执行）</li>
+    <li>自动生成侧栏大纲</li>
+    <li>相对路径资源解析</li>
+  </ul>
+
+  <h2>相关链接</h2>
+  <p>
+    查看 Markdown 入门指南：
+    <a href="markdown-basics.md">Markdown 基础</a>
+  </p>
+
+  <h2>内联样式</h2>
+  <p>支持 <span class="highlight">内联 CSS</span> 样式展示。</p>
+
+  <script>alert('此脚本不会被执行')</script>
+</body>
+</html>

@@ -171,6 +171,7 @@ export function SearchModal({ open, onOpenChange, onFileSelect }: SearchModalPro
   // 获取文件图标颜色
   const getFileIconColor = (path: string) => {
     if (path.endsWith('.md')) return 'text-blue-500'
+    if (/\.html?$/i.test(path)) return 'text-orange-500'
     if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'text-blue-600'
     if (path.endsWith('.js') || path.endsWith('.jsx')) return 'text-yellow-500'
     if (path.endsWith('.go')) return 'text-cyan-500'

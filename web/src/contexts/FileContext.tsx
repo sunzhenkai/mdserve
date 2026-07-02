@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileInfo, OutlineItem, MenuItem } from '@/types'
+import { FileInfo, OutlineItem, MenuItem, FileFormat } from '@/types'
 import { useWebSocket } from '@/hooks/useWebSocket'
 
 type FileContextState = {
@@ -11,6 +11,8 @@ type FileContextState = {
   currentFile: string | null
   // 文件内容
   content: string
+  // 文档格式
+  fileFormat: FileFormat
   // 文档大纲
   outline: OutlineItem[]
   // 加载状态
@@ -121,12 +123,14 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
 
   const fileQuery = useQuery({
     queryKey: ['file', currentFile],
-    queryFn: () => fetchJson<{ content?: string; tags?: string[]; categories?: string[]; resolvedPath?: string }>(
+    queryFn: () => fetchJson<{ content?: string; format?: FileFormat; tags?: string[]; categories?: string[]; resolvedPath?: string }>(
       `/api/file?path=${encodeURIComponent(currentFile!)}`
     ),
     enabled: Boolean(currentFile),
     staleTime: 5 * 1000,
   })
+
+  const fileFormat: FileFormat = fileQuery.data?.format === 'html' ? 'html' : 'markdown'
 
   // 如果服务端将目录路径解析为 README.md（如 docs/ → docs/README.md），同步更新 URL
   useEffect(() => {
@@ -188,6 +192,7 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     files: filesQuery.data?.files || [],
     currentFile,
     content: fileQuery.data?.content || '',
+    fileFormat,
     outline,
     loading: configQuery.isPending || fileQuery.isPending,
     tags: fileQuery.data?.tags || [],

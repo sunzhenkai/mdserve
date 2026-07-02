@@ -2,17 +2,18 @@
 
 [中文文档](./README.md)
 
-A real-time Markdown file server with a web interface for browsing and rendering Markdown files.
+A real-time Markdown file server with a web interface for browsing and rendering Markdown and HTML files.
 
 ## Features
 
-- 📁 **File Browsing** - Browse Markdown files by directory structure
+- 📁 **File Browsing** - Browse Markdown and HTML files by directory structure
 - 🔍 **Full-text Search** - Search file names and content
 - 🌓 **Theme Switching** - Support for light/dark themes
 - 📑 **Table of Contents** - Auto-generated document outline
 - 🏷️ **Tags & Categories** - Organize documents with tags and categories
 - 📊 **Diagram Engines** - Mermaid out of the box + self-hosted Kroki for d2/plantuml/graphviz and more
 - ⚡ **Live Reload** - Auto-refresh browser when files are modified
+- 🌐 **HTML Support** - Safely render `.html`/`.htm` documents (no JavaScript execution)
 - 📦 **Single Binary Deployment** - Frontend assets embedded in binary
 
 ## Installation

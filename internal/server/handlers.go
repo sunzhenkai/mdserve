@@ -6,11 +6,59 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wii/mdserve/internal/markdown"
 )
+
+var htmlTagPattern = regexp.MustCompile(`<[^>]*>`)
+
+func isBrowsableDocument(name string) bool {
+	return isSearchableDocument(name)
+}
+
+func detectFileFormat(name string) string {
+	lower := strings.ToLower(name)
+	if strings.HasSuffix(lower, ".html") || strings.HasSuffix(lower, ".htm") {
+		return "html"
+	}
+	return "markdown"
+}
+
+func isSearchableDocument(name string) bool {
+	lower := strings.ToLower(name)
+	return strings.HasSuffix(lower, ".md") ||
+		strings.HasSuffix(lower, ".html") ||
+		strings.HasSuffix(lower, ".htm")
+}
+
+func stripHTMLForSearch(content string) string {
+	content = stripTagBlock(content, "script")
+	content = stripTagBlock(content, "style")
+	content = htmlTagPattern.ReplaceAllString(content, " ")
+	return strings.Join(strings.Fields(content), " ")
+}
+
+func stripTagBlock(content, tag string) string {
+	open := regexp.MustCompile(`(?is)<` + tag + `[^>]*>`)
+	close := regexp.MustCompile(`(?is)</` + tag + `\s*>`)
+	for open.MatchString(content) {
+		start := open.FindStringIndex(content)
+		if start == nil {
+			break
+		}
+		rest := content[start[1]:]
+		end := close.FindStringIndex(rest)
+		if end == nil {
+			content = content[:start[0]]
+			break
+		}
+		content = content[:start[0]] + rest[end[1]:]
+	}
+	return content
+}
 
 func (s *Server) resolveRequestPath(rawPath, rawBase string) (string, bool) {
 	requested := strings.TrimSpace(strings.ReplaceAll(rawPath, "\\", "/"))
@@ -85,7 +133,7 @@ func (s *Server) handleGetFile(c *gin.Context) {
 		return
 	}
 
-	// If path is a directory, look for README.md (case-insensitive)
+	// If path is a directory, look for README.md then index.html/index.htm (case-insensitive)
 	info, err := os.Stat(fullPath)
 	if err == nil && info.IsDir() {
 		entries, readErr := os.ReadDir(fullPath)
@@ -103,7 +151,21 @@ func (s *Server) handleGetFile(c *gin.Context) {
 			}
 		}
 		if !found {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no README.md found in directory"})
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				lower := strings.ToLower(entry.Name())
+				if lower == "index.html" || lower == "index.htm" {
+					relPath = path.Join(relPath, entry.Name())
+					fullPath = filepath.Join(fullPath, entry.Name())
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no default document found in directory"})
 			return
 		}
 	}
@@ -116,6 +178,19 @@ func (s *Server) handleGetFile(c *gin.Context) {
 	}
 
 	contentStr := string(content)
+	format := detectFileFormat(filepath.Base(relPath))
+
+	response := gin.H{
+		"content":      contentStr,
+		"format":       format,
+		"resolvedPath": relPath,
+	}
+
+	if format == "html" {
+		response["outline"] = []markdown.OutlineItem{}
+		c.JSON(http.StatusOK, response)
+		return
+	}
 
 	// Extract frontmatter
 	frontMatter, cleanContent := markdown.ExtractFrontMatter(contentStr)
@@ -123,11 +198,8 @@ func (s *Server) handleGetFile(c *gin.Context) {
 	// Parse outline from clean content (without frontmatter)
 	outline := markdown.ExtractOutline(cleanContent)
 
-	response := gin.H{
-		"content":      cleanContent,
-		"outline":      outline,
-		"resolvedPath": relPath,
-	}
+	response["content"] = cleanContent
+	response["outline"] = outline
 
 	// Add frontmatter data if exists
 	if frontMatter != nil {
@@ -217,8 +289,8 @@ func (s *Server) handleSearch(c *gin.Context) {
 			return nil
 		}
 
-		// Only search markdown files
-		if !strings.HasSuffix(strings.ToLower(info.Name()), ".md") {
+		// Only search markdown and HTML files
+		if !isSearchableDocument(info.Name()) {
 			return nil
 		}
 
@@ -229,6 +301,10 @@ func (s *Server) handleSearch(c *gin.Context) {
 		}
 
 		contentStr := string(content)
+		isHTML := detectFileFormat(info.Name()) == "html"
+		if isHTML {
+			contentStr = stripHTMLForSearch(contentStr)
+		}
 
 		var matches []string
 
@@ -239,9 +315,7 @@ func (s *Server) handleSearch(c *gin.Context) {
 
 		// Search in content
 		scanner := bufio.NewScanner(strings.NewReader(contentStr))
-		lineNum := 0
 		for scanner.Scan() {
-			lineNum++
 			line := scanner.Text()
 			if strings.Contains(strings.ToLower(line), query) {
 				// Extract matching context
@@ -252,11 +326,13 @@ func (s *Server) handleSearch(c *gin.Context) {
 			}
 		}
 
-		// Also search in headings
-		headings := markdown.ExtractOutline(contentStr)
-		for _, h := range headings {
-			if strings.Contains(strings.ToLower(h.Text), query) {
-				matches = append(matches, "标题: "+h.Text)
+		// Also search in headings (markdown only)
+		if !isHTML {
+			headings := markdown.ExtractOutline(contentStr)
+			for _, h := range headings {
+				if strings.Contains(strings.ToLower(h.Text), query) {
+					matches = append(matches, "标题: "+h.Text)
+				}
 			}
 		}
 

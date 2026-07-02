@@ -11,6 +11,8 @@ export interface OutlineItem {
   slug: string
 }
 
+export type FileFormat = 'markdown' | 'html'
+
 export interface SearchResult {
   path: string
   name: string
@@ -19,6 +21,7 @@ export interface SearchResult {
 
 export interface FileData {
   content: string
+  format?: FileFormat
   outline: OutlineItem[]
   tags?: string[]
   categories?: string[]

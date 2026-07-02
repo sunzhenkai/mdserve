@@ -308,7 +308,7 @@ func (s *Server) scanDirectory(path, root string) ([]FileInfo, error) {
 					Children: children,
 				})
 			}
-		} else if strings.HasSuffix(strings.ToLower(entry.Name()), ".md") {
+		} else if isBrowsableDocument(entry.Name()) {
 			// Check ignore patterns for files
 			if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
 				continue

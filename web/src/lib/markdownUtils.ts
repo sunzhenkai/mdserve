@@ -39,6 +39,16 @@ export function looksLikeMarkdownPath(path: string): boolean {
   return /\.mdx?$/i.test(fileName)
 }
 
+export function looksLikeHtmlPath(path: string): boolean {
+  const withoutQuery = path.split('?')[0]
+  const fileName = withoutQuery.split('/').pop() || ''
+  return /\.html?$/i.test(fileName)
+}
+
+export function looksLikeDocumentPath(path: string): boolean {
+  return looksLikeMarkdownPath(path) || looksLikeHtmlPath(path)
+}
+
 export async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {

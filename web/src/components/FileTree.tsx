@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronRight, ChevronDown, FileText, Folder, ListPlus, ListMinus, Target } from 'lucide-react'
+import { ChevronRight, ChevronDown, FileText, FileCode, Folder, ListPlus, ListMinus, Target } from 'lucide-react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -59,6 +59,10 @@ function sortFiles(files: FileInfo[]): FileInfo[] {
     }))
 }
 
+function isHtmlFile(path: string): boolean {
+  return /\.html?$/i.test(path)
+}
+
 interface TreeNodeProps {
   item: FileInfo
   onSelect: (path: string) => void
@@ -111,7 +115,11 @@ function TreeNode({
         ) : (
           <>
             <span className="w-4 h-4" />
-            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            {isHtmlFile(item.path) ? (
+              <FileCode className="h-4 w-4 text-orange-500 flex-shrink-0" />
+            ) : (
+              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            )}
           </>
         )}
         <span className="text-sm whitespace-nowrap">

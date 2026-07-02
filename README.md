@@ -2,16 +2,17 @@
 
 [English](./README_EN.md) | 中文
 
-一个实时 Markdown 文件服务器，提供 Web 界面浏览和渲染 Markdown 文件。
+一个实时 Markdown 文件服务器，提供 Web 界面浏览和渲染 Markdown 与 HTML 文件。
 
 ## 功能特性
 
-- 📁 **文件浏览** - 按目录结构浏览 Markdown 文件
+- 📁 **文件浏览** - 按目录结构浏览 Markdown 与 HTML 文件
 - 🔍 **全文搜索** - 搜索文件名和内容
 - 🌓 **主题切换** - 支持亮色/暗色主题
 - 📑 **目录大纲** - 自动生成文档目录
 - 📊 **图表引擎** - Mermaid 开箱即用 + 自托管 Kroki 扩展 d2/plantuml/graphviz 等
 - ⚡ **实时刷新** - 文件修改后自动刷新浏览器
+- 🌐 **HTML 支持** - 安全渲染 `.html`/`.htm` 文档（无 JavaScript 执行）
 - 📦 **单文件部署** - 前端资源嵌入二进制文件
 
 ## 安装

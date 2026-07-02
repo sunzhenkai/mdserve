@@ -1,6 +1,7 @@
 import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
+import { HtmlViewer } from './components/HtmlViewer'
 import { Outline } from './components/Outline'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TagsModal } from './components/TagsModal'
@@ -20,6 +21,7 @@ function AppContent() {
     files,
     currentFile,
     content,
+    fileFormat,
     outline,
     loading,
     tags,
@@ -140,11 +142,10 @@ function AppContent() {
   const handleDownload = () => {
     if (!content || !currentFile) return
 
-    // 获取文件名
     const fileName = currentFile.split('/').pop() || 'document.md'
+    const mimeType = fileFormat === 'html' ? 'text/html;charset=utf-8' : 'text/markdown;charset=utf-8'
 
-    // 创建 Blob 并下载
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -156,6 +157,20 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
+
+  const renderDocumentViewer = () => {
+    const viewerProps = {
+      content,
+      currentFile,
+      showSource: documentSourceVisible,
+      onNavigateToFile: handleFileSelect,
+      onOutlineChange: handleOutlineChange,
+    }
+
+    return fileFormat === 'html'
+      ? <HtmlViewer {...viewerProps} />
+      : <MarkdownViewer {...viewerProps} />
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -329,20 +344,14 @@ function AppContent() {
                       </div>
                     )}
 
-                    <MarkdownViewer
-                      content={content}
-                      currentFile={currentFile}
-                      showSource={documentSourceVisible}
-                      onNavigateToFile={handleFileSelect}
-                      onOutlineChange={handleOutlineChange}
-                    />
+                    {renderDocumentViewer()}
                   </div>
                 </div>
               )}
             </>
           ) : (
             <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground px-6 text-center">
-              请从左侧选择一个 Markdown 文件开始浏览
+              请从左侧选择一个文档开始浏览
             </div>
           )}
         </div>
@@ -483,13 +492,7 @@ function AppContent() {
                   </div>
                 )}
 
-                <MarkdownViewer
-                  content={content}
-                  currentFile={currentFile}
-                  showSource={documentSourceVisible}
-                  onNavigateToFile={handleFileSelect}
-                  onOutlineChange={handleOutlineChange}
-                />
+                {renderDocumentViewer()}
               </div>
             </div>
           </div>

@@ -27,6 +27,15 @@ diagrams:
     timeout: "10s"
     cache_version: 1
 
+# MCP (Model Context Protocol) 配置（可选）
+# mdserve 提供两种 MCP 传输，让 AI 客户端（Claude / Cursor / ZCode 等）
+# 以只读工具浏览文档库：
+#   1. stdio 子命令：mdserve mcp <path>，不受此处开关影响，始终可用。
+#   2. HTTP 端点：mdserve serve 时挂载 POST /mcp，受此处 enabled 控制。
+# 所有工具均为只读（list_docs / read_doc / search_docs / get_outline / list_tags）。
+mcp:
+  enabled: true   # 是否在 serve 中挂载 /mcp HTTP 端点（默认 true，只读无副作用）
+
 # 菜单配置
 menu:
   - title: "指南"

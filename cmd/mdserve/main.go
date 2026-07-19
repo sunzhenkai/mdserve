@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/wii/mdserve/internal/config"
 	"github.com/wii/mdserve/internal/diagram"
+	"github.com/wii/mdserve/internal/docs"
 	"github.com/wii/mdserve/internal/git"
+	"github.com/wii/mdserve/internal/mcp"
 	"github.com/wii/mdserve/internal/selfupdate"
 	"github.com/wii/mdserve/internal/server"
 )
@@ -116,7 +121,29 @@ Use --install-dir to override the destination.`,
 	updateCmd.Flags().BoolVar(&updateForce, "force", false, "install even if the current version matches")
 	updateCmd.Flags().StringVar(&updateRepo, "repo", selfupdate.DefaultRepo, "GitHub repository in owner/name form")
 
+	// MCP command — runs the Model Context Protocol server over stdio so an AI
+	// client (Claude / Cursor / ZCode, …) can browse the docs library with
+	// read-only tools. Configure the client to launch:
+	//   mdserve mcp /path/to/docs
+	var mcpCmd = &cobra.Command{
+		Use:   "mcp [path]",
+		Short: "Run the MCP server over stdio",
+		Long: `Run the Model Context Protocol (MCP) server over stdio, exposing the
+document library to AI clients via read-only tools (list_docs, read_doc,
+search_docs, get_outline, list_tags).
+
+Point your AI client at this command, e.g.:
+
+  mdserve mcp /path/to/docs
+
+Logs go to stderr; stdout is reserved for protocol messages.`,
+		Args: cobra.MaximumNArgs(1),
+		Run:  runMCP,
+	}
+	mcpCmd.Flags().StringVarP(&configPath, "config", "c", "", "Config file path (default: .mdserve.yaml)")
+
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(mcpCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
@@ -194,6 +221,8 @@ func runServe(cmd *cobra.Command, args []string) {
 		KrokiURL:          cfg.Diagrams.Kroki.URL,
 		KrokiTimeout:      cfg.Diagrams.Kroki.Timeout,
 		KrokiCacheVersion: cfg.Diagrams.Kroki.CacheVersion,
+		MCPEnabled:        cfg.MCP.Enabled,
+		Version:           Version,
 	}
 
 	// 7. Create and start server
@@ -235,6 +264,52 @@ func convertMenuItems(items []config.MenuItem) []server.MenuItem {
 		}
 	}
 	return result
+}
+
+// runMCP loads config + docs and serves the MCP protocol over stdio.
+// Only docs.path and docs.ignore are used; web/git/diagram settings are ignored.
+func runMCP(cmd *cobra.Command, args []string) {
+	var docPath string
+	if len(args) > 0 {
+		docPath = args[0]
+	}
+
+	cfgFile := config.FindConfigFile(configPath, docPath)
+	var ignorePatterns []string
+	if cfgFile != "" {
+		cfg, err := config.Load(cfgFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+			os.Exit(1)
+		}
+		if docPath == "" {
+			docPath = cfg.Docs.Path
+		}
+		ignorePatterns = cfg.Docs.Ignore
+	} else if configPath != "" {
+		fmt.Fprintf(os.Stderr, "[WARN] Config file not found: %s, using defaults\n", configPath)
+	}
+
+	if docPath == "" {
+		fmt.Fprintln(os.Stderr, "document path is required (via argument or config docs.path)")
+		os.Exit(1)
+	}
+
+	lib, err := docs.New(docPath, ignorePatterns)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to open docs library: %v\n", err)
+		os.Exit(1)
+	}
+
+	mcpServer := mcp.NewServer(lib, "mdserve", Version)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	if err := mcpServer.ServeStdio(ctx, os.Stdin, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "mcp server stopped: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runConfigInit(cmd *cobra.Command, args []string) {

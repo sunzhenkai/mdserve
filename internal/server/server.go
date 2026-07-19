@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	apipkg "github.com/wii/mdserve/internal/api"
 	"github.com/wii/mdserve/internal/diagram"
+	"github.com/wii/mdserve/internal/docs"
 	"github.com/wii/mdserve/internal/ignore"
+	mcppkg "github.com/wii/mdserve/internal/mcp"
 	"github.com/wii/mdserve/internal/tag"
 	"github.com/wii/mdserve/internal/watcher"
 )
@@ -46,6 +46,10 @@ type Config struct {
 	KrokiURL          string
 	KrokiTimeout      time.Duration
 	KrokiCacheVersion int
+	// MCPEnabled controls whether the /mcp HTTP endpoint is mounted.
+	MCPEnabled bool
+	// Version is the server build version, surfaced in MCP serverInfo.
+	Version string
 }
 
 // Server represents the markdown server
@@ -58,6 +62,7 @@ type Server struct {
 	tagIndexer    *tag.Indexer
 	ignoreMatcher *ignore.Matcher
 	diagramCache  *diagram.Cache
+	library       *docs.Library
 }
 
 // WebSocketHub manages WebSocket connections
@@ -103,20 +108,13 @@ func (h *WebSocketHub) Run() {
 
 // New creates a new server instance
 func New(config *Config) (*Server, error) {
-	// Resolve absolute path
-	absPath, err := filepath.Abs(config.Path)
+	// Build the shared docs library: validates the path, builds the tag index,
+	// and owns path resolution / read / search logic shared with the MCP layer.
+	library, err := docs.New(config.Path, config.IgnorePatterns)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve path: %w", err)
+		return nil, err
 	}
-
-	// Check if path exists
-	info, err := os.Stat(absPath)
-	if err != nil {
-		return nil, fmt.Errorf("path does not exist: %w", err)
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("path is not a directory: %s", absPath)
-	}
+	absPath := library.RootPath()
 
 	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
@@ -148,16 +146,6 @@ func New(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
-	// Create ignore matcher
-	ignoreMatcher := ignore.New(config.IgnorePatterns)
-
-	// Create tag indexer
-	tagIndexer := tag.NewIndexer(absPath, config.IgnorePatterns)
-	if err := tagIndexer.Build(); err != nil {
-		// Log warning but don't fail - tag indexing is optional
-		fmt.Printf("[WARN] Failed to build tag index: %v\n", err)
-	}
-
 	// Build the diagram cache. Always initialize it (even when Kroki is
 	// disabled) so the directory exists; failures are fatal per the spec
 	// because a half-working cache is worse than a clean start.
@@ -172,9 +160,10 @@ func New(config *Config) (*Server, error) {
 		watcher:       w,
 		hub:           hub,
 		rootPath:      absPath,
-		tagIndexer:    tagIndexer,
-		ignoreMatcher: ignoreMatcher,
+		tagIndexer:    library.TagIndexer(),
+		ignoreMatcher: library.IgnoreMatcher(),
 		diagramCache:  diagramCache,
+		library:       library,
 	}
 
 	// Setup routes
@@ -217,6 +206,22 @@ func (s *Server) setupRoutes() {
 		Cache:   s.diagramCache,
 	})
 	diagramHandler.Register(s.router.Group("/api"))
+
+	// MCP (Model Context Protocol) Streamable HTTP endpoint.
+	// Read-only tools over the same docs library; disabled only when the user
+	// explicitly sets mcp.enabled=false. The stdio subcommand is unaffected.
+	if s.config.MCPEnabled {
+		mcpServer := mcppkg.NewServer(s.library, "mdserve", s.config.Version)
+		mcpHandler := mcppkg.NewHTTPHandler(mcpServer)
+		mcpHandler.Register(s.router.Group(""))
+	} else {
+		// When disabled, register explicit 404s so the SPA NoRoute handler does
+		// not shadow the endpoint and masquerade as a working MCP server.
+		notFound := func(c *gin.Context) { c.JSON(http.StatusNotFound, gin.H{"error": "mcp disabled"}) }
+		s.router.POST("/mcp", notFound)
+		s.router.GET("/mcp", notFound)
+		s.router.DELETE("/mcp", notFound)
+	}
 
 	// WebSocket route
 	s.router.GET("/ws", s.handleWebSocket)
@@ -273,53 +278,28 @@ func (s *Server) handleGetFiles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"files": files})
 }
 
-func (s *Server) scanDirectory(path, root string) ([]FileInfo, error) {
-	entries, err := os.ReadDir(path)
+// scanDirectory scans the directory tree. It delegates to the shared docs
+// library and maps the result into the server's FileInfo type (kept for
+// JSON-shape stability with the existing API). The (path, root) params are
+// retained for signature compatibility; only the root scan is used today.
+func (s *Server) scanDirectory(_, _ string) ([]FileInfo, error) {
+	libFiles, err := s.library.ListTree()
 	if err != nil {
 		return nil, err
 	}
+	return convertFileInfos(libFiles), nil
+}
 
-	var files []FileInfo
-	for _, entry := range entries {
-		// Skip hidden files
-		if strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
-
-		fullPath := filepath.Join(path, entry.Name())
-		relPath, _ := filepath.Rel(root, fullPath)
-
-		// Check ignore patterns for directories
-		if entry.IsDir() {
-			if s.ignoreMatcher.ShouldIgnoreDir(relPath) {
-				continue
-			}
-			// Scan subdirectory
-			children, err := s.scanDirectory(fullPath, root)
-			if err != nil {
-				continue
-			}
-			// Only include directory if it has children
-			if len(children) > 0 {
-				files = append(files, FileInfo{
-					Name:     entry.Name(),
-					Path:     relPath,
-					Type:     "directory",
-					Children: children,
-				})
-			}
-		} else if isBrowsableDocument(entry.Name()) {
-			// Check ignore patterns for files
-			if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
-				continue
-			}
-			files = append(files, FileInfo{
-				Name: entry.Name(),
-				Path: relPath,
-				Type: "file",
-			})
+// convertFileInfos maps docs.FileInfo → server.FileInfo recursively.
+func convertFileInfos(in []docs.FileInfo) []FileInfo {
+	out := make([]FileInfo, len(in))
+	for i, f := range in {
+		out[i] = FileInfo{
+			Name:     f.Name,
+			Path:     f.Path,
+			Type:     f.Type,
+			Children: convertFileInfos(f.Children),
 		}
 	}
-
-	return files, nil
+	return out
 }

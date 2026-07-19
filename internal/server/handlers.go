@@ -1,111 +1,21 @@
 package server
 
 import (
-	"bufio"
+	"errors"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wii/mdserve/internal/markdown"
+	"github.com/wii/mdserve/internal/docs"
 )
 
-var htmlTagPattern = regexp.MustCompile(`<[^>]*>`)
-
-func isBrowsableDocument(name string) bool {
-	return isSearchableDocument(name)
-}
-
-func detectFileFormat(name string) string {
-	lower := strings.ToLower(name)
-	if strings.HasSuffix(lower, ".html") || strings.HasSuffix(lower, ".htm") {
-		return "html"
-	}
-	return "markdown"
-}
-
-func isSearchableDocument(name string) bool {
-	lower := strings.ToLower(name)
-	return strings.HasSuffix(lower, ".md") ||
-		strings.HasSuffix(lower, ".html") ||
-		strings.HasSuffix(lower, ".htm")
-}
-
+// Thin wrappers over the shared docs package, kept so existing tests that
+// reference them by name keep compiling.
+func isBrowsableDocument(name string) bool  { return docs.IsBrowsableDocument(name) }
+func isSearchableDocument(name string) bool { return docs.IsSearchableDocument(name) }
+func detectFileFormat(name string) string   { return docs.DetectFileFormat(name) }
 func stripHTMLForSearch(content string) string {
-	content = stripTagBlock(content, "script")
-	content = stripTagBlock(content, "style")
-	content = htmlTagPattern.ReplaceAllString(content, " ")
-	return strings.Join(strings.Fields(content), " ")
-}
-
-func stripTagBlock(content, tag string) string {
-	open := regexp.MustCompile(`(?is)<` + tag + `[^>]*>`)
-	close := regexp.MustCompile(`(?is)</` + tag + `\s*>`)
-	for open.MatchString(content) {
-		start := open.FindStringIndex(content)
-		if start == nil {
-			break
-		}
-		rest := content[start[1]:]
-		end := close.FindStringIndex(rest)
-		if end == nil {
-			content = content[:start[0]]
-			break
-		}
-		content = content[:start[0]] + rest[end[1]:]
-	}
-	return content
-}
-
-func (s *Server) resolveRequestPath(rawPath, rawBase string) (string, bool) {
-	requested := strings.TrimSpace(strings.ReplaceAll(rawPath, "\\", "/"))
-	if requested == "" {
-		return "", false
-	}
-
-	isRootRelative := strings.HasPrefix(requested, "/")
-	requested = strings.TrimLeft(requested, "/")
-	requested = path.Clean(requested)
-	if requested == "." || requested == ".." || strings.HasPrefix(requested, "../") {
-		return "", false
-	}
-
-	resolved := requested
-	if !isRootRelative && strings.TrimSpace(rawBase) != "" {
-		base := strings.TrimSpace(strings.ReplaceAll(rawBase, "\\", "/"))
-		base = strings.TrimLeft(base, "/")
-		base = path.Clean(base)
-		if base == ".." || strings.HasPrefix(base, "../") {
-			return "", false
-		}
-		baseDir := path.Dir(base)
-		if baseDir == "." {
-			baseDir = ""
-		}
-		if baseDir != "" {
-			resolved = path.Clean(baseDir + "/" + requested)
-		}
-	}
-
-	if resolved == "." || resolved == ".." || strings.HasPrefix(resolved, "../") {
-		return "", false
-	}
-	return resolved, true
-}
-
-func (s *Server) toAbsolutePath(relPath string) (string, bool) {
-	fullPath := filepath.Join(s.rootPath, filepath.FromSlash(relPath))
-	rel, err := filepath.Rel(s.rootPath, fullPath)
-	if err != nil {
-		return "", false
-	}
-	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return "", false
-	}
-	return fullPath, true
+	return docs.StripHTMLForSearch(content)
 }
 
 func (s *Server) handleGetFile(c *gin.Context) {
@@ -115,98 +25,33 @@ func (s *Server) handleGetFile(c *gin.Context) {
 		return
 	}
 
-	relPath, ok := s.resolveRequestPath(requestPath, "")
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
-		return
-	}
-
-	fullPath, ok := s.toAbsolutePath(relPath)
-	if !ok {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
-		return
-	}
-
-	// Check if file is ignored
-	if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
-		return
-	}
-
-	// If path is a directory, look for README.md then index.html/index.htm (case-insensitive)
-	info, err := os.Stat(fullPath)
-	if err == nil && info.IsDir() {
-		entries, readErr := os.ReadDir(fullPath)
-		if readErr != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "directory not readable"})
-			return
-		}
-		found := false
-		for _, entry := range entries {
-			if !entry.IsDir() && strings.EqualFold(entry.Name(), "readme.md") {
-				relPath = path.Join(relPath, entry.Name())
-				fullPath = filepath.Join(fullPath, entry.Name())
-				found = true
-				break
-			}
-		}
-		if !found {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				lower := strings.ToLower(entry.Name())
-				if lower == "index.html" || lower == "index.htm" {
-					relPath = path.Join(relPath, entry.Name())
-					fullPath = filepath.Join(fullPath, entry.Name())
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no default document found in directory"})
-			return
-		}
-	}
-
-	// Read file
-	content, err := os.ReadFile(fullPath)
+	res, err := s.library.ReadDoc(requestPath)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+		switch {
+		case errors.Is(err, docs.ErrInvalidPath):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
+		case errors.Is(err, docs.ErrAccessDenied):
+			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		case errors.Is(err, docs.ErrNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
-
-	contentStr := string(content)
-	format := detectFileFormat(filepath.Base(relPath))
 
 	response := gin.H{
-		"content":      contentStr,
-		"format":       format,
-		"resolvedPath": relPath,
+		"content":      res.Content,
+		"format":       res.Format,
+		"resolvedPath": res.ResolvedPath,
+		"outline":      res.Outline,
 	}
-
-	if format == "html" {
-		response["outline"] = []markdown.OutlineItem{}
-		c.JSON(http.StatusOK, response)
-		return
+	if res.Tags != nil {
+		response["tags"] = res.Tags
 	}
-
-	// Extract frontmatter
-	frontMatter, cleanContent := markdown.ExtractFrontMatter(contentStr)
-
-	// Parse outline from clean content (without frontmatter)
-	outline := markdown.ExtractOutline(cleanContent)
-
-	response["content"] = cleanContent
-	response["outline"] = outline
-
-	// Add frontmatter data if exists
-	if frontMatter != nil {
-		response["tags"] = frontMatter.Tags
-		response["categories"] = frontMatter.Categories
+	if res.Categories != nil {
+		response["categories"] = res.Categories
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 
@@ -218,13 +63,13 @@ func (s *Server) handleGetAsset(c *gin.Context) {
 		return
 	}
 
-	relPath, ok := s.resolveRequestPath(requestPath, basePath)
+	relPath, ok := s.library.ResolvePath(requestPath, basePath)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
 		return
 	}
 
-	fullPath, ok := s.toAbsolutePath(relPath)
+	fullPath, ok := s.library.AbsolutePath(relPath)
 	if !ok {
 		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
 		return
@@ -259,137 +104,21 @@ func (s *Server) handleSearch(c *gin.Context) {
 		return
 	}
 
-	query = strings.ToLower(query)
-	var results []SearchResult
-
-	// Walk through all markdown files
-	err := filepath.Walk(s.rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		// Get relative path for ignore checking
-		relPath, _ := filepath.Rel(s.rootPath, path)
-
-		// Skip ignored directories
-		if info.IsDir() {
-			if s.ignoreMatcher.ShouldIgnoreDir(relPath) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Skip ignored files
-		if s.ignoreMatcher.ShouldIgnoreFile(relPath) {
-			return nil
-		}
-
-		// Skip hidden files
-		if strings.HasPrefix(info.Name(), ".") {
-			return nil
-		}
-
-		// Only search markdown and HTML files
-		if !isSearchableDocument(info.Name()) {
-			return nil
-		}
-
-		// Read file content
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return nil
-		}
-
-		contentStr := string(content)
-		isHTML := detectFileFormat(info.Name()) == "html"
-		if isHTML {
-			contentStr = stripHTMLForSearch(contentStr)
-		}
-
-		var matches []string
-
-		// Check filename
-		if strings.Contains(strings.ToLower(info.Name()), query) {
-			matches = append(matches, "文件名匹配")
-		}
-
-		// Search in content
-		scanner := bufio.NewScanner(strings.NewReader(contentStr))
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.Contains(strings.ToLower(line), query) {
-				// Extract matching context
-				context := extractContext(line, query)
-				if len(matches) < 5 { // Limit matches per file
-					matches = append(matches, context)
-				}
-			}
-		}
-
-		// Also search in headings (markdown only)
-		if !isHTML {
-			headings := markdown.ExtractOutline(contentStr)
-			for _, h := range headings {
-				if strings.Contains(strings.ToLower(h.Text), query) {
-					matches = append(matches, "标题: "+h.Text)
-				}
-			}
-		}
-
-		if len(matches) > 0 {
-			results = append(results, SearchResult{
-				Path:    relPath,
-				Name:    info.Name(),
-				Matches: matches,
-			})
-		}
-
-		return nil
-	})
-
+	libResults, err := s.library.Search(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Limit results
-	if len(results) > 50 {
-		results = results[:50]
+	results := make([]SearchResult, len(libResults))
+	for i, r := range libResults {
+		results[i] = SearchResult{
+			Path:    r.Path,
+			Name:    r.Name,
+			Matches: r.Matches,
+		}
 	}
-
 	c.JSON(http.StatusOK, gin.H{"results": results})
-}
-
-// extractContext extracts a context around the match
-func extractContext(line, query string) string {
-	line = strings.TrimSpace(line)
-	if len(line) > 100 {
-		// Find match position
-		idx := strings.Index(strings.ToLower(line), strings.ToLower(query))
-		if idx == -1 {
-			return line[:97] + "..."
-		}
-
-		// Extract context around match
-		start := idx - 30
-		if start < 0 {
-			start = 0
-		}
-		end := idx + len(query) + 30
-		if end > len(line) {
-			end = len(line)
-		}
-
-		context := line[start:end]
-		if start > 0 {
-			context = "..." + context
-		}
-		if end < len(line) {
-			context = context + "..."
-		}
-		return context
-	}
-	return line
 }
 
 // handleGetConfig returns the server configuration for the frontend

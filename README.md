@@ -13,6 +13,7 @@
 - 📊 **图表引擎** - Mermaid 开箱即用 + 自托管 Kroki 扩展 d2/plantuml/graphviz 等
 - ⚡ **实时刷新** - 文件修改后自动刷新浏览器
 - 🌐 **HTML 支持** - 安全渲染 `.html`/`.htm` 文档（无 JavaScript 执行）
+- 🤖 **MCP 支持** - 让 AI 客户端（Claude / Cursor / ZCode 等）通过只读工具浏览文档库（stdio + HTTP）
 - 📦 **单文件部署** - 前端资源嵌入二进制文件
 
 ## 安装
@@ -138,6 +139,67 @@ diagrams:
 > 别名兼容：`dot` → `graphviz`、`c4`/`c4model` → `structurizr`、`pu`/`puml` → `plantuml`。
 > 完整部署指南见 [docs/guide/diagrams.md](./docs/guide/diagrams.md)。
 
+## MCP 支持
+
+mdserve 内置 [Model Context Protocol](https://modelcontextprotocol.io)（MCP）服务端，让 AI 客户端（Claude Desktop / Cursor / ZCode 等）以只读工具浏览你的文档库。
+
+提供两种传输，共用同一套只读工具：
+
+| 传输 | 启动方式 | 适用场景 |
+|---|---|---|
+| **stdio**（推荐） | `mdserve mcp /path/to/docs` | 本地客户端直连，AI 直接启动子进程 |
+| **HTTP** | `mdserve serve` 时自动挂载 `/mcp` | 远程 / 浏览器集成 |
+
+### 暴露的只读工具
+
+| 工具 | 说明 |
+|---|---|
+| `list_docs` | 列出文档树（可选子目录过滤） |
+| `read_doc` | 读取单个文档（目录回退 README.md → index.html） |
+| `search_docs` | 全文搜索（文件名 + 标题 + 行内容） |
+| `get_outline` | 提取 markdown 标题大纲 |
+| `list_tags` | 列出 front matter 的 tags / categories 及其文档 |
+
+所有工具均为只读，无写入副作用。
+
+### 客户端配置示例
+
+**stdio（Claude Desktop / 通用）：**
+
+```json
+{
+  "mcpServers": {
+    "mdserve": {
+      "command": "mdserve",
+      "args": ["mcp", "/path/to/docs"]
+    }
+  }
+}
+```
+
+**HTTP（远程 URL）：**
+
+```json
+{
+  "mcpServers": {
+    "mdserve": {
+      "url": "http://127.0.0.1:3000/mcp"
+    }
+  }
+}
+```
+
+### 配置
+
+HTTP `/mcp` 端点由 `.mdserve.yaml` 的 `mcp.enabled` 控制（默认 `true`，只读无副作用）。stdio 子命令始终可用，不受此开关影响：
+
+```yaml
+mcp:
+  enabled: true   # 是否在 serve 中挂载 /mcp HTTP 端点
+```
+
+> 安全：所有工具只读；HTTP 端点与既有 `/api/*` 同等信任边界（默认仅监听 127.0.0.1）。
+
 ## 开发
 
 ### 开发模式
@@ -215,6 +277,16 @@ make build-all
 ### WS /ws
 
 WebSocket 连接，用于实时刷新
+
+### /mcp（MCP Streamable HTTP）
+
+MCP（Model Context Protocol）端点，仅在 `mcp.enabled != false`（默认启用）时挂载：
+
+- `POST /mcp` — JSON-RPC 请求/批处理；`initialize` 响应含 `Mcp-Session-Id` 头；纯通知返回 `202`
+- `GET /mcp` — `text/event-stream`，发送 `event: endpoint` 后挂起
+- `DELETE /mcp` — 确认关闭会话，返回 `200`
+
+详见 [MCP 支持](#mcp-支持) 章节。stdio 传输见 `mdserve mcp <path>`。
 
 ## 许可证
 

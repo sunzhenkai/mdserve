@@ -17,6 +17,7 @@ type Config struct {
 	Git      GitConfig      `yaml:"git"`
 	Menu     []MenuItem     `yaml:"menu"`
 	Diagrams DiagramsConfig `yaml:"diagrams"`
+	MCP      MCPConfig      `yaml:"mcp"`
 }
 
 // SiteConfig holds site-related configuration
@@ -60,6 +61,15 @@ type KrokiConfig struct {
 	CacheVersion int           `yaml:"cache_version"` // 可选，默认 1，变更后失效全部缓存
 }
 
+// MCPConfig controls the MCP (Model Context Protocol) support.
+//
+// The stdio subcommand (`mdserve mcp`) is always available regardless of this
+// setting. This flag only governs whether the HTTP `/mcp` endpoint is mounted
+// inside `mdserve serve`. All exposed tools are read-only, so it defaults on.
+type MCPConfig struct {
+	Enabled bool `yaml:"enabled"` // 默认 true；是否在 serve 中挂载 /mcp HTTP 端点
+}
+
 // MenuItem represents a menu item
 type MenuItem struct {
 	Title    string     `yaml:"title"`
@@ -91,6 +101,9 @@ func DefaultConfig() *Config {
 				Timeout:      10 * time.Second,
 				CacheVersion: 1,
 			},
+		},
+		MCP: MCPConfig{
+			Enabled: true,
 		},
 		Menu: []MenuItem{},
 	}
@@ -249,6 +262,16 @@ diagrams:
     timeout: "10s"
     # 缓存版本号，变更后失效全部缓存（可选，默认 1）
     cache_version: 1
+
+# MCP (Model Context Protocol) 配置（可选）
+# mdserve 同时提供两种 MCP 传输，让 AI 客户端（Claude / Cursor / ZCode 等）
+# 以只读工具浏览文档库：
+#   1. stdio 子命令：mdserve mcp <path>，不受此处开关影响，始终可用。
+#   2. HTTP 端点：mdserve serve 时挂载 POST /mcp，受此处 enabled 控制。
+# 所有工具均为只读（list_docs / read_doc / search_docs / get_outline / list_tags）。
+mcp:
+  # 是否在 serve 中挂载 /mcp HTTP 端点（默认 true，只读无副作用）
+  enabled: true
 
 # 菜单配置（可选）
 # 支持两级菜单结构

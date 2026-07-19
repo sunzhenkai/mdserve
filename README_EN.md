@@ -14,6 +14,7 @@ A real-time Markdown file server with a web interface for browsing and rendering
 - 📊 **Diagram Engines** - Mermaid out of the box + self-hosted Kroki for d2/plantuml/graphviz and more
 - ⚡ **Live Reload** - Auto-refresh browser when files are modified
 - 🌐 **HTML Support** - Safely render `.html`/`.htm` documents (no JavaScript execution)
+- 🤖 **MCP Support** - Let AI clients (Claude / Cursor / ZCode, …) browse the library via read-only tools (stdio + HTTP)
 - 📦 **Single Binary Deployment** - Frontend assets embedded in binary
 
 ## Installation
@@ -174,6 +175,67 @@ draft: false
 | `weight`      | Sort weight             |
 | `slug`        | URL-friendly identifier |
 
+## MCP Support
+
+mdserve ships a built-in [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server so AI clients (Claude Desktop / Cursor / ZCode, …) can browse your document library through read-only tools.
+
+Two transports share one read-only tool set:
+
+| Transport | How to start | Use case |
+|---|---|---|
+| **stdio** (recommended) | `mdserve mcp /path/to/docs` | Local clients that spawn the process directly |
+| **HTTP** | auto-mounted at `/mcp` under `mdserve serve` | Remote / browser integration |
+
+### Exposed read-only tools
+
+| Tool | Description |
+|---|---|
+| `list_docs` | List the document tree (optional sub-directory filter) |
+| `read_doc` | Read a single doc (directory falls back to README.md → index.html) |
+| `search_docs` | Full-text search (filename + headings + line content) |
+| `get_outline` | Extract the markdown heading outline |
+| `list_tags` | List front-matter tags/categories and their documents |
+
+All tools are read-only with no write side-effects.
+
+### Client configuration examples
+
+**stdio (Claude Desktop / generic):**
+
+```json
+{
+  "mcpServers": {
+    "mdserve": {
+      "command": "mdserve",
+      "args": ["mcp", "/path/to/docs"]
+    }
+  }
+}
+```
+
+**HTTP (remote URL):**
+
+```json
+{
+  "mcpServers": {
+    "mdserve": {
+      "url": "http://127.0.0.1:3000/mcp"
+    }
+  }
+}
+```
+
+### Configuration
+
+The HTTP `/mcp` endpoint is governed by `mcp.enabled` in `.mdserve.yaml` (default `true`, read-only and side-effect free). The stdio subcommand is always available regardless of this toggle:
+
+```yaml
+mcp:
+  enabled: true   # mount the /mcp HTTP endpoint under `mdserve serve`
+```
+
+> Security: all tools are read-only; the HTTP endpoint shares the same trust boundary as the existing `/api/*` (listens on 127.0.0.1 by default).
+
 ## Development
 
 ### Development Mode
@@ -251,6 +313,16 @@ Diagram rendering proxy (requires `diagrams.kroki` enabled). Body `{engine, code
 ### WS /ws
 
 WebSocket connection for live reload
+
+### /mcp (MCP Streamable HTTP)
+
+MCP (Model Context Protocol) endpoint, mounted only when `mcp.enabled != false` (default on):
+
+- `POST /mcp` — JSON-RPC request/batch; `initialize` response includes an `Mcp-Session-Id` header; notification-only requests return `202`
+- `GET /mcp` — `text/event-stream`, sends `event: endpoint` then holds open
+- `DELETE /mcp` — acknowledges session close, returns `200`
+
+See the [MCP Support](#mcp-support) section. For stdio transport use `mdserve mcp <path>`.
 
 ## Examples
 

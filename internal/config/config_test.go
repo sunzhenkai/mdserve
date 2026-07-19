@@ -144,3 +144,40 @@ diagrams:
 		t.Fatalf("Load should return error for invalid YAML")
 	}
 }
+
+func TestDefaultConfig_MCPEnabledByDefault(t *testing.T) {
+	cfg := DefaultConfig()
+	if !cfg.MCP.Enabled {
+		t.Errorf("default MCP.Enabled = false, want true")
+	}
+}
+
+func TestLoad_EmptyConfig_KeepsMCPDefault(t *testing.T) {
+	path := writeTempConfig(t, `
+docs:
+  path: "."
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if !cfg.MCP.Enabled {
+		t.Errorf("MCP.Enabled = false, want true (default)")
+	}
+}
+
+func TestLoad_MCPDisabled(t *testing.T) {
+	path := writeTempConfig(t, `
+docs:
+  path: "."
+mcp:
+  enabled: false
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.MCP.Enabled {
+		t.Errorf("MCP.Enabled = true, want false")
+	}
+}

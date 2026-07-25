@@ -16,6 +16,11 @@ import { FileProvider, UIProvider, useFile, useUI } from './contexts'
 import { useEffect, useRef } from 'react'
 import { useState } from 'react'
 
+/** 桌面端侧栏边缘展开/关闭按钮共用规格（以关闭按钮为基准） */
+const SIDEBAR_EDGE_BTN_CLASS =
+  'w-4 h-11 flex items-center justify-center bg-card border border-border shadow-sm opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer'
+const SIDEBAR_EDGE_ICON_CLASS = 'h-3.5 w-3.5 text-muted-foreground'
+
 function AppContent() {
   const {
     files,
@@ -278,14 +283,11 @@ function AppContent() {
                   )}
                 </div>
                 <button
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-50
-                             w-4 h-11 flex items-center justify-center
-                             bg-card border border-border rounded-l-md shadow-sm
-                             opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 z-50 rounded-l-md ${SIDEBAR_EDGE_BTN_CLASS}`}
                   onClick={() => setSidebarCollapsed(true)}
                   title="收起文件列表"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronLeft className={SIDEBAR_EDGE_ICON_CLASS} />
                 </button>
               </div>
             )}
@@ -293,15 +295,12 @@ function AppContent() {
 
           {sidebarCollapsed && (
             <button
-              className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50
-                         w-5 h-14 items-center justify-center
-                         bg-card border border-border rounded-r-md shadow-md
-                         opacity-80 hover:opacity-100 hover:bg-accent hover:w-6 transition-all cursor-pointer"
+              className={`hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50 rounded-r-md ${SIDEBAR_EDGE_BTN_CLASS}`}
               onClick={() => setSidebarCollapsed(false)}
               title="展开文件列表"
               aria-label="展开文件列表"
             >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className={SIDEBAR_EDGE_ICON_CLASS} />
             </button>
           )}
         </>
@@ -395,28 +394,22 @@ function AppContent() {
                   <Outline items={outline} />
                 </div>
                 <button
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-50
-                             w-4 h-11 flex items-center justify-center
-                             bg-card border border-border rounded-r-md shadow-sm
-                             opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 z-50 rounded-r-md ${SIDEBAR_EDGE_BTN_CLASS}`}
                   onClick={() => setOutlineCollapsed(true)}
                   title="收起目录"
                 >
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronRight className={SIDEBAR_EDGE_ICON_CLASS} />
                 </button>
               </div>
             </aside>
 
             {outlineCollapsed && (
               <button
-                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-50
-                           w-4 h-11 items-center justify-center
-                           bg-card border border-border rounded-l-md shadow-sm
-                           opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
+                className={`hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-50 rounded-l-md ${SIDEBAR_EDGE_BTN_CLASS}`}
                 onClick={() => setOutlineCollapsed(false)}
                 title="展开目录"
               >
-                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronLeft className={SIDEBAR_EDGE_ICON_CLASS} />
               </button>
             )}
           </>

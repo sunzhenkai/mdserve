@@ -204,10 +204,42 @@ func (l *Library) AbsolutePath(relPath string) (absPath string, ok bool) {
 // honouring ignore patterns and hidden-file rules. Directories with no
 // browsable children are omitted.
 func (l *Library) ListTree() ([]FileInfo, error) {
-	return l.scanDirectory(l.rootPath, l.rootPath)
+	return l.scanDirectory(l.rootPath, l.rootPath, 0)
 }
 
-func (l *Library) scanDirectory(dir, root string) ([]FileInfo, error) {
+// ListTreeAt returns the browsable tree under relPath with a depth limit.
+// Empty relPath means the docs root. depth 0 means unlimited (full subtree);
+// depth 1 returns only direct children (directory nodes omit nested children).
+func (l *Library) ListTreeAt(relPath string, depth int) ([]FileInfo, error) {
+	relPath = normalizeTreePath(relPath)
+	dir := l.rootPath
+	if relPath != "" {
+		cleaned := path.Clean(relPath)
+		if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+			return nil, ErrInvalidPath
+		}
+		relPath = cleaned
+		abs, ok := l.AbsolutePath(relPath)
+		if !ok {
+			return nil, ErrAccessDenied
+		}
+		info, err := os.Stat(abs)
+		if err != nil || !info.IsDir() {
+			return nil, ErrNotFound
+		}
+		if l.ignoreMatcher.ShouldIgnoreDir(relPath) {
+			return nil, ErrNotFound
+		}
+		dir = abs
+	}
+	if depth < 0 {
+		depth = 0
+	}
+	return l.scanDirectory(dir, l.rootPath, depth)
+}
+
+// scanDirectory scans dir. depth 0 = unlimited; depth 1 = direct children only.
+func (l *Library) scanDirectory(dir, root string, depth int) ([]FileInfo, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -227,7 +259,22 @@ func (l *Library) scanDirectory(dir, root string) ([]FileInfo, error) {
 			if l.ignoreMatcher.ShouldIgnoreDir(relPath) {
 				continue
 			}
-			children, err := l.scanDirectory(fullPath, root)
+			if depth == 1 {
+				if !l.hasBrowsableContent(fullPath, root) {
+					continue
+				}
+				files = append(files, FileInfo{
+					Name: entry.Name(),
+					Path: relPath,
+					Type: "directory",
+				})
+				continue
+			}
+			nextDepth := 0
+			if depth > 1 {
+				nextDepth = depth - 1
+			}
+			children, err := l.scanDirectory(fullPath, root, nextDepth)
 			if err != nil {
 				continue
 			}
@@ -252,6 +299,35 @@ func (l *Library) scanDirectory(dir, root string) ([]FileInfo, error) {
 	}
 
 	return files, nil
+}
+
+// hasBrowsableContent reports whether dir contains any browsable document
+// (used when depth=1 to omit empty directories without returning their children).
+func (l *Library) hasBrowsableContent(dir, root string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		fullPath := filepath.Join(dir, entry.Name())
+		relPath, _ := filepath.Rel(root, fullPath)
+		if entry.IsDir() {
+			if l.ignoreMatcher.ShouldIgnoreDir(relPath) {
+				continue
+			}
+			if l.hasBrowsableContent(fullPath, root) {
+				return true
+			}
+		} else if IsBrowsableDocument(entry.Name()) {
+			if !l.ignoreMatcher.ShouldIgnoreFile(relPath) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ReadDoc reads and parses a single document. If relPath points at a directory,

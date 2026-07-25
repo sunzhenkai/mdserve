@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronRight, ChevronDown, FileText, FileCode, Folder, ListPlus, ListMinus, Target } from 'lucide-react'
+import { ChevronRight, ChevronDown, FileText, FileCode, Folder, ListPlus, ListMinus, Target, Loader2, AlertCircle } from 'lucide-react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { FileInfo } from '../types'
+import { useFile } from '@/contexts'
 
 interface FileTreeProps {
   files: FileInfo[]
@@ -11,7 +12,7 @@ interface FileTreeProps {
   selectedPath: string | null
 }
 
-// 收集所有目录路径
+// 收集所有目录路径（仅已加载到本地树中的）
 function collectAllPaths(files: FileInfo[]): Set<string> {
   const paths = new Set<string>()
   const collect = (items: FileInfo[]) => {
@@ -71,6 +72,8 @@ interface TreeNodeProps {
   expandedPaths: Set<string>
   toggleExpand: (path: string) => void
   registerNodeRef: (path: string) => (el: HTMLDivElement | null) => void
+  loadingDirectories: Set<string>
+  failedDirectories: Set<string>
 }
 
 function TreeNode({
@@ -81,10 +84,14 @@ function TreeNode({
   expandedPaths,
   toggleExpand,
   registerNodeRef,
+  loadingDirectories,
+  failedDirectories,
 }: TreeNodeProps) {
   const isDirectory = item.type === 'directory'
   const isExpanded = expandedPaths.has(item.path)
   const isSelected = item.path === selectedPath
+  const isLoading = loadingDirectories.has(item.path)
+  const isFailed = failedDirectories.has(item.path)
 
   const handleClick = () => {
     if (isDirectory) {
@@ -108,7 +115,13 @@ function TreeNode({
         {isDirectory ? (
           <>
             <span className="flex items-center justify-center w-4 h-4 text-muted-foreground">
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
             </span>
             <Folder className="h-4 w-4 text-primary flex-shrink-0" />
           </>
@@ -125,11 +138,32 @@ function TreeNode({
         <span className="text-sm whitespace-nowrap">
           {item.name}
         </span>
+        {isDirectory && isFailed && (
+          <span title="加载失败，点击重试">
+            <AlertCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
+          </span>
+        )}
       </div>
       
-      {isDirectory && isExpanded && item.children && (
+      {isDirectory && isExpanded && (
         <div className="tree-children">
-          {item.children.map((child) => (
+          {isLoading && item.children === undefined && (
+            <div
+              className="text-xs text-muted-foreground px-2 py-1"
+              style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}
+            >
+              加载中...
+            </div>
+          )}
+          {isFailed && item.children === undefined && !isLoading && (
+            <div
+              className="text-xs text-destructive px-2 py-1"
+              style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}
+            >
+              加载失败，点击目录重试
+            </div>
+          )}
+          {item.children?.map((child) => (
             <TreeNode
               key={child.path}
               item={child}
@@ -139,6 +173,8 @@ function TreeNode({
               expandedPaths={expandedPaths}
               toggleExpand={toggleExpand}
               registerNodeRef={registerNodeRef}
+              loadingDirectories={loadingDirectories}
+              failedDirectories={failedDirectories}
             />
           ))}
         </div>
@@ -148,6 +184,14 @@ function TreeNode({
 }
 
 export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
+  const {
+    loadDirectoryChildren,
+    loadFullTree,
+    loadingDirectories,
+    failedDirectories,
+    setExpandedDirectories,
+  } = useFile()
+
   // 收集所有目录路径
   const allDirectoryPaths = useMemo(() => collectAllPaths(files), [files])
   
@@ -156,6 +200,12 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
 
   // 展开状态：默认折叠；根据 URL/选中文档仅展开“当前文档路径”
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set())
+  const [expandAllLoading, setExpandAllLoading] = useState(false)
+
+  // 同步展开集到 FileContext，供 tree_reload 后重拉
+  useEffect(() => {
+    setExpandedDirectories(expandedPaths)
+  }, [expandedPaths, setExpandedDirectories])
 
   // 用于“定位”按钮滚动到当前文档节点
   const nodeRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
@@ -178,8 +228,33 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
     setExpandedPaths(new Set(parentPaths))
   }, [selectedPath])
 
-  // 切换单个目录
+  // 展开时按需加载子节点（按深度顺序，避免父节点未合并时子路径找不到）
+  useEffect(() => {
+    const sorted = [...expandedPaths].sort(
+      (a, b) => a.split('/').filter(Boolean).length - b.split('/').filter(Boolean).length
+    )
+    let cancelled = false
+    ;(async () => {
+      for (const path of sorted) {
+        if (cancelled) return
+        try {
+          await loadDirectoryChildren(path)
+        } catch {
+          // 失败态由 failedDirectories 展示
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [expandedPaths, loadDirectoryChildren])
+
+  // 切换单个目录；已展开且失败时点击重试加载
   const toggleExpand = (path: string) => {
+    if (expandedPaths.has(path) && failedDirectories.has(path)) {
+      void loadDirectoryChildren(path).catch(() => {})
+      return
+    }
     setExpandedPaths(prev => {
       const next = new Set(prev)
       if (next.has(path)) {
@@ -191,9 +266,18 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
     })
   }
 
-  // 全部展开
-  const expandAll = () => {
-    setExpandedPaths(new Set(allDirectoryPaths))
+  // 全部展开：优先一次拉全量树（服务端缓存），否则已加载节点全部展开
+  const expandAll = async () => {
+    setExpandAllLoading(true)
+    try {
+      const full = await loadFullTree()
+      setExpandedPaths(collectAllPaths(full))
+    } catch (error) {
+      console.error('expandAll failed, falling back to loaded paths:', error)
+      setExpandedPaths(new Set(allDirectoryPaths))
+    } finally {
+      setExpandAllLoading(false)
+    }
   }
 
   // 全部折叠
@@ -202,7 +286,9 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
   }
 
   // 判断是否全部展开
-  const isAllExpanded = allDirectoryPaths.size === expandedPaths.size && allDirectoryPaths.size > 0
+  const isAllExpanded = allDirectoryPaths.size > 0 &&
+    [...allDirectoryPaths].every((p) => expandedPaths.has(p)) &&
+    !expandAllLoading
   // 判断是否全部折叠
   const isAllCollapsed = expandedPaths.size === 0 && allDirectoryPaths.size > 0
 
@@ -212,6 +298,9 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
     // 确保选中文档的父链都展开，否则它可能还没被渲染出来
     const parentPaths = getParentPaths(selectedPath)
     setExpandedPaths(new Set(parentPaths))
+    for (const dir of parentPaths) {
+      void loadDirectoryChildren(dir).catch(() => {})
+    }
 
     // 等待一次渲染完成后滚动到节点
     requestAnimationFrame(() => {
@@ -243,11 +332,15 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={expandAll}
-            disabled={isAllExpanded}
+            onClick={() => void expandAll()}
+            disabled={isAllExpanded || expandAllLoading}
             title="全部展开"
           >
-            <ListPlus className="h-3.5 w-3.5" />
+            {expandAllLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <ListPlus className="h-3.5 w-3.5" />
+            )}
           </Button>
           <Button
             variant="ghost"
@@ -278,6 +371,8 @@ export function FileTree({ files, onSelect, selectedPath }: FileTreeProps) {
                 expandedPaths={expandedPaths}
                 toggleExpand={toggleExpand}
                 registerNodeRef={registerNodeRef}
+                loadingDirectories={loadingDirectories}
+                failedDirectories={failedDirectories}
               />
             ))
           )}

@@ -166,3 +166,135 @@ func TestStripHTMLForSearch(t *testing.T) {
 		t.Fatalf("stripHTMLForSearch() = %q, want %q", got, "Title Visible text")
 	}
 }
+
+func getFiles(t *testing.T, s *Server, query string) (int, map[string]any) {
+	t.Helper()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	url := "/api/files"
+	if query != "" {
+		url += "?" + query
+	}
+	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	s.handleGetFiles(c)
+
+	var resp map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	return w.Code, resp
+}
+
+func TestHandleGetFiles_FullTreeFromCache(t *testing.T) {
+	s, root := setupTestServer(t)
+	if err := os.MkdirAll(filepath.Join(root, "guide"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.md"), []byte("# a"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guide", "b.md"), []byte("# b"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := s.treeCache.Rebuild(); err != nil {
+		t.Fatalf("Rebuild: %v", err)
+	}
+
+	code, resp := getFiles(t, s, "")
+	if code != http.StatusOK {
+		t.Fatalf("status=%d body=%v", code, resp)
+	}
+	files, ok := resp["files"].([]any)
+	if !ok || len(files) != 2 {
+		t.Fatalf("unexpected files: %+v", resp["files"])
+	}
+	// Full tree should include nested children on guide
+	var guide map[string]any
+	for _, f := range files {
+		m := f.(map[string]any)
+		if m["name"] == "guide" {
+			guide = m
+		}
+	}
+	if guide == nil {
+		t.Fatalf("guide missing: %+v", files)
+	}
+	children, _ := guide["children"].([]any)
+	if len(children) != 1 {
+		t.Fatalf("guide children=%+v", guide["children"])
+	}
+}
+
+func TestHandleGetFiles_Depth1Root(t *testing.T) {
+	s, root := setupTestServer(t)
+	if err := os.MkdirAll(filepath.Join(root, "guide", "nested"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.md"), []byte("# a"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guide", "b.md"), []byte("# b"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guide", "nested", "c.md"), []byte("# c"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := s.treeCache.Rebuild(); err != nil {
+		t.Fatalf("Rebuild: %v", err)
+	}
+
+	code, resp := getFiles(t, s, "depth=1")
+	if code != http.StatusOK {
+		t.Fatalf("status=%d body=%v", code, resp)
+	}
+	files := resp["files"].([]any)
+	if len(files) != 2 {
+		t.Fatalf("want 2 root nodes, got %+v", files)
+	}
+	for _, f := range files {
+		m := f.(map[string]any)
+		if m["type"] == "directory" {
+			if _, has := m["children"]; has {
+				t.Fatalf("depth=1 directory should omit children: %+v", m)
+			}
+		}
+	}
+}
+
+func TestHandleGetFiles_Depth1Subdir(t *testing.T) {
+	s, root := setupTestServer(t)
+	if err := os.MkdirAll(filepath.Join(root, "guide", "nested"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guide", "b.md"), []byte("# b"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guide", "nested", "c.md"), []byte("# c"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := s.treeCache.Rebuild(); err != nil {
+		t.Fatalf("Rebuild: %v", err)
+	}
+
+	code, resp := getFiles(t, s, "path=guide&depth=1")
+	if code != http.StatusOK {
+		t.Fatalf("status=%d body=%v", code, resp)
+	}
+	files := resp["files"].([]any)
+	if len(files) != 2 {
+		t.Fatalf("want 2 guide children, got %+v", files)
+	}
+}
+
+func TestHandleGetFiles_InvalidPath(t *testing.T) {
+	s, _ := setupTestServer(t)
+	code, _ := getFiles(t, s, "path=does-not-exist&depth=1")
+	if code != http.StatusNotFound {
+		t.Fatalf("status=%d, want 404", code)
+	}
+
+	code, _ = getFiles(t, s, "path=../etc&depth=1")
+	if code != http.StatusNotFound && code != http.StatusForbidden {
+		t.Fatalf("status=%d, want 404 or 403", code)
+	}
+}

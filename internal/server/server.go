@@ -2,10 +2,13 @@ package server
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +66,10 @@ type Server struct {
 	ignoreMatcher *ignore.Matcher
 	diagramCache  *diagram.Cache
 	library       *docs.Library
+	treeCache     *docs.TreeCache
+
+	treeReloadMu    sync.Mutex
+	treeReloadTimer *time.Timer
 }
 
 // WebSocketHub manages WebSocket connections
@@ -127,6 +134,22 @@ func New(config *Config) (*Server, error) {
 	hub := NewWebSocketHub()
 	go hub.Run()
 
+	treeCache := docs.NewTreeCache(library)
+	if err := treeCache.Rebuild(); err != nil {
+		fmt.Printf("[WARN] Initial file tree cache build failed: %v\n", err)
+	}
+
+	server := &Server{
+		config:        config,
+		router:        router,
+		hub:           hub,
+		rootPath:      absPath,
+		tagIndexer:    library.TagIndexer(),
+		ignoreMatcher: library.IgnoreMatcher(),
+		library:       library,
+		treeCache:     treeCache,
+	}
+
 	// Create file watcher
 	w, err := watcher.New(absPath,
 		// File change callback - reload specific file
@@ -135,16 +158,16 @@ func New(config *Config) (*Server, error) {
 			message := fmt.Sprintf(`{"type":"reload","path":"%s"}`, relPath)
 			hub.broadcast <- message
 		},
-		// Tree change callback - reload file tree
+		// Tree change: debounce cache rebuild, then notify clients
 		func() {
-			message := `{"type":"tree_reload"}`
-			hub.broadcast <- message
+			server.scheduleTreeCacheRebuild()
 		},
 		config.IgnorePatterns,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
+	server.watcher = w
 
 	// Build the diagram cache. Always initialize it (even when Kroki is
 	// disabled) so the directory exists; failures are fatal per the spec
@@ -153,23 +176,30 @@ func New(config *Config) (*Server, error) {
 	if err := diagramCache.Init(); err != nil {
 		return nil, fmt.Errorf("init diagram cache: %w", err)
 	}
-
-	server := &Server{
-		config:        config,
-		router:        router,
-		watcher:       w,
-		hub:           hub,
-		rootPath:      absPath,
-		tagIndexer:    library.TagIndexer(),
-		ignoreMatcher: library.IgnoreMatcher(),
-		diagramCache:  diagramCache,
-		library:       library,
-	}
+	server.diagramCache = diagramCache
 
 	// Setup routes
 	server.setupRoutes()
 
 	return server, nil
+}
+
+const treeCacheDebounce = 200 * time.Millisecond
+
+// scheduleTreeCacheRebuild debounces watcher-driven rebuilds, then broadcasts
+// tree_reload so clients refetch against the updated cache.
+func (s *Server) scheduleTreeCacheRebuild() {
+	s.treeReloadMu.Lock()
+	defer s.treeReloadMu.Unlock()
+	if s.treeReloadTimer != nil {
+		s.treeReloadTimer.Stop()
+	}
+	s.treeReloadTimer = time.AfterFunc(treeCacheDebounce, func() {
+		if err := s.treeCache.Rebuild(); err != nil {
+			fmt.Printf("[WARN] Debounced file tree cache rebuild failed: %v\n", err)
+		}
+		s.hub.broadcast <- `{"type":"tree_reload"}`
+	})
 }
 
 // Start starts the server
@@ -269,13 +299,50 @@ type FileInfo struct {
 }
 
 func (s *Server) handleGetFiles(c *gin.Context) {
-	files, err := s.scanDirectory(s.rootPath, s.rootPath)
+	reqPath := c.Query("path")
+	depthStr := c.Query("depth")
+
+	var (
+		libFiles []docs.FileInfo
+		err      error
+	)
+
+	// No query params: full tree from cache (compatible with existing clients).
+	if reqPath == "" && depthStr == "" {
+		libFiles, err = s.treeCache.Get()
+	} else {
+		depth := 0
+		if depthStr != "" {
+			depth, err = strconv.Atoi(depthStr)
+			if err != nil || depth < 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid depth"})
+				return
+			}
+		}
+		libFiles, err = s.listFilesAt(reqPath, depth)
+	}
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		status := http.StatusInternalServerError
+		if errors.Is(err, docs.ErrNotFound) || errors.Is(err, docs.ErrInvalidPath) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, docs.ErrAccessDenied) {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"files": files})
+	c.JSON(http.StatusOK, gin.H{"files": convertFileInfos(libFiles)})
+}
+
+// listFilesAt prefers a cache slice when ready; otherwise falls back to a live
+// ListTreeAt scan (shallow depth=1 does not wait on a full rebuild).
+func (s *Server) listFilesAt(path string, depth int) ([]docs.FileInfo, error) {
+	if files, err, ok := s.treeCache.Slice(path, depth); ok {
+		return files, err
+	}
+	return s.library.ListTreeAt(path, depth)
 }
 
 // scanDirectory scans the directory tree. It delegates to the shared docs
@@ -283,7 +350,7 @@ func (s *Server) handleGetFiles(c *gin.Context) {
 // JSON-shape stability with the existing API). The (path, root) params are
 // retained for signature compatibility; only the root scan is used today.
 func (s *Server) scanDirectory(_, _ string) ([]FileInfo, error) {
-	libFiles, err := s.library.ListTree()
+	libFiles, err := s.treeCache.Get()
 	if err != nil {
 		return nil, err
 	}

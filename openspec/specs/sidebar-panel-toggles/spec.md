@@ -1,0 +1,21 @@
+# sidebar-panel-toggles Specification
+
+## Purpose
+TBD - created by archiving change fix-tree-toggle-style-and-loading. Update Purpose after archive.
+## Requirements
+### Requirement: 桌面端侧栏边缘展开与关闭按钮视觉一致
+
+系统 SHALL 使桌面端（`lg` 及以上）文件树侧栏与大纲侧栏的边缘「展开」「关闭」按钮使用同一套尺寸与视觉规格，并以各侧栏的关闭按钮样式为基准。
+
+基准规格 MUST 包含：按钮宽高约为 `w-4 h-11`、图标约为 `h-3.5 w-3.5`、默认半透明（约 `opacity-40`）、hover 时提高不透明度并可略增宽度（约 `hover:w-5`）。文件树在侧栏已收起时显示的展开按钮 MUST NOT 使用明显更大的尺寸或更高的默认不透明度特例。
+
+#### Scenario: 文件树展开与关闭按钮对齐关闭规格
+
+- **WHEN** 用户在桌面端查看文件树侧栏的关闭按钮，以及侧栏收起后的展开按钮
+- **THEN** 两按钮的宽高、图标尺寸与默认/hover 透明度表现 MUST 一致（均符合关闭按钮基准）
+
+#### Scenario: 大纲侧栏与文件树侧栏规格一致
+
+- **WHEN** 用户在桌面端同时可看到文件树与大纲侧栏的展开或关闭边缘按钮
+- **THEN** 两侧栏对应按钮的尺寸与视觉规格 MUST 彼此一致
+

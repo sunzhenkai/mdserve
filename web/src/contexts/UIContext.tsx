@@ -30,8 +30,10 @@ type UIContextValue = UIState & UIActions
 
 const UIContext = createContext<UIContextValue | null>(null)
 
-const LS_SIDEBAR_COLLAPSED = 'mdserve-sidebar-collapsed'
+// 使用新 key：旧版默认把文件树折叠并写入 localStorage，会导致目录树“消失”
+const LS_SIDEBAR_COLLAPSED = 'mdserve-file-tree-collapsed'
 const LS_OUTLINE_COLLAPSED = 'mdserve-outline-collapsed'
+const LS_SIDEBAR_COLLAPSED_LEGACY = 'mdserve-sidebar-collapsed'
 
 function readBoolFromLocalStorage(key: string, fallback: boolean): boolean {
   try {
@@ -54,10 +56,18 @@ function writeBoolToLocalStorage(key: string, value: boolean) {
 }
 
 export function UIProvider({ children }: { children: React.ReactNode }) {
-  // 默认：文档目录折叠；大纲不折叠（保持默认全展开体验）
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() =>
-    readBoolFromLocalStorage(LS_SIDEBAR_COLLAPSED, true),
-  )
+  // 默认展开文件目录树；大纲默认展开
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        // 清理旧 key，避免错误默认值继续生效
+        window.localStorage.removeItem(LS_SIDEBAR_COLLAPSED_LEGACY)
+      }
+    } catch {
+      // ignore
+    }
+    return readBoolFromLocalStorage(LS_SIDEBAR_COLLAPSED, false)
+  })
   const [outlineCollapsed, setOutlineCollapsed] = useState<boolean>(() =>
     readBoolFromLocalStorage(LS_OUTLINE_COLLAPSED, false),
   )

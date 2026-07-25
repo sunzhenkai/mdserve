@@ -7,6 +7,8 @@ import { useWebSocket } from '@/hooks/useWebSocket'
 type FileContextState = {
   // 文件树
   files: FileInfo[]
+  // 文件树是否仍在加载
+  filesLoading: boolean
   // 当前文件
   currentFile: string | null
   // 文件内容
@@ -17,6 +19,8 @@ type FileContextState = {
   outline: OutlineItem[]
   // 加载状态
   loading: boolean
+  // 当前文档是否加载失败（如 404）
+  fileError: string | null
   // 当前文件的标签和分类
   tags: string[]
   categories: string[]
@@ -128,6 +132,13 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     ),
     enabled: Boolean(currentFile),
     staleTime: 5 * 1000,
+    retry: (failureCount, error) => {
+      // 404/400 无需重试，避免控制台刷屏且拖慢回退逻辑
+      if (error instanceof Error && /Request failed: (404|400|403)/.test(error.message)) {
+        return false
+      }
+      return failureCount < 2
+    },
   })
 
   const fileFormat: FileFormat = fileQuery.data?.format === 'html' ? 'html' : 'markdown'
@@ -144,6 +155,18 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
       }, { replace: true })
     }
   }, [fileQuery.data?.resolvedPath, currentFile, setSearchParams])
+
+  // 默认文档不存在时回退到 README.md，避免空白页 + 无效 path 占住 URL
+  useEffect(() => {
+    if (!fileQuery.isError || !currentFile || !configQuery.isSuccess) return
+    if (currentFile !== defaultDoc) return
+    if (defaultDoc === 'README.md') return
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('path', 'README.md')
+      return next
+    }, { replace: true })
+  }, [fileQuery.isError, currentFile, defaultDoc, configQuery.isSuccess, setSearchParams])
 
   const loadFile = useCallback((path: string, updateUrl = true) => {
     if (!path) return
@@ -190,11 +213,15 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
 
   const value: FileContextValue = {
     files: filesQuery.data?.files || [],
+    filesLoading: filesQuery.isPending,
     currentFile,
     content: fileQuery.data?.content || '',
     fileFormat,
     outline,
-    loading: configQuery.isPending || fileQuery.isPending,
+    loading: configQuery.isPending || (Boolean(currentFile) && fileQuery.isPending && !fileQuery.isError),
+    fileError: fileQuery.isError
+      ? (fileQuery.error instanceof Error ? fileQuery.error.message : '文档加载失败')
+      : null,
     tags: fileQuery.data?.tags || [],
     categories: fileQuery.data?.categories || [],
     allTags: tagsQuery.data?.tags || {},

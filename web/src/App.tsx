@@ -1,4 +1,4 @@
-import { Menu, List, ChevronLeft, ChevronRight, Tags, Search } from 'lucide-react'
+import { Menu, List, ChevronLeft, ChevronRight, Tags, Search, PanelLeft } from 'lucide-react'
 import { FileTree } from './components/FileTree'
 import { MarkdownViewer } from './components/MarkdownViewer'
 import { HtmlViewer } from './components/HtmlViewer'
@@ -19,11 +19,13 @@ import { useState } from 'react'
 function AppContent() {
   const {
     files,
+    filesLoading,
     currentFile,
     content,
     fileFormat,
     outline,
     loading,
+    fileError,
     tags,
     categories,
     allTags,
@@ -54,7 +56,6 @@ function AppContent() {
 
   const [documentFullscreen, setDocumentFullscreen] = useState(false)
   const [documentSourceVisible, setDocumentSourceVisible] = useState(false)
-  const hasSidebarContent = files.length > 0
   const hasOutlineContent = outline.length > 0
 
   const contentScrollRef = useRef<HTMLDivElement>(null)
@@ -176,15 +177,26 @@ function AppContent() {
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="relative z-40 h-12 mx-4 mt-2 mb-2 flex items-center justify-between px-3 rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm shadow-sm flex-shrink-0">
-        {/* Left: Menu button (mobile) + Logo */}
+        {/* Left: Menu / file-tree toggle + Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
             className="lg:hidden"
             onClick={() => setMobileMenuOpen(true)}
+            title="打开文件列表"
           >
             <Menu className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? '展开文件列表' : '收起文件列表'}
+            aria-label={sidebarCollapsed ? '展开文件列表' : '收起文件列表'}
+          >
+            <PanelLeft className="h-4 w-4" />
           </Button>
           {/* 点睛之色 logo：浅浅墨绿色淡淡的强调 */}
           <h1 className="text-lg font-bold text-point">mdserve</h1>
@@ -243,21 +255,27 @@ function AppContent() {
       
       {/* Main Content */}
       <main className="flex-1 flex overflow-hidden relative gap-4 px-4 pb-2">
-        {/* Desktop Sidebar (FileTree) */}
-        {hasSidebarContent && (
-          <>
-            <aside
-              className={`hidden lg:flex h-full relative flex-shrink-0 overflow-hidden transition-all duration-200 ease-out ${
-                sidebarCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
-              }`}
-            >
+        {/* Desktop Sidebar (FileTree) — 始终保留入口，不依赖 files 是否已加载 */}
+        <>
+          <aside
+            className={`hidden lg:flex h-full relative flex-shrink-0 overflow-hidden transition-all duration-200 ease-out ${
+              sidebarCollapsed ? 'w-0 min-w-0' : 'w-72 min-w-72'
+            }`}
+          >
+            {!sidebarCollapsed && (
               <div className="h-full w-full rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm relative z-30">
                 <div className="h-full flex flex-col">
-                  <FileTree
-                    files={files}
-                    onSelect={handleFileSelect}
-                    selectedPath={currentFile}
-                  />
+                  {filesLoading ? (
+                    <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground px-4 text-center">
+                      正在加载文件列表...
+                    </div>
+                  ) : (
+                    <FileTree
+                      files={files}
+                      onSelect={handleFileSelect}
+                      selectedPath={currentFile}
+                    />
+                  )}
                 </div>
                 <button
                   className="absolute right-0 top-1/2 -translate-y-1/2 z-50
@@ -270,22 +288,23 @@ function AppContent() {
                   <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>
-            </aside>
-
-            {sidebarCollapsed && (
-              <button
-                className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50
-                           w-4 h-11 items-center justify-center
-                           bg-card border border-border rounded-r-md shadow-sm
-                           opacity-40 hover:opacity-100 hover:bg-accent hover:w-5 transition-all cursor-pointer"
-                onClick={() => setSidebarCollapsed(false)}
-                title="展开文件列表"
-              >
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
             )}
-          </>
-        )}
+          </aside>
+
+          {sidebarCollapsed && (
+            <button
+              className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-50
+                         w-5 h-14 items-center justify-center
+                         bg-card border border-border rounded-r-md shadow-md
+                         opacity-80 hover:opacity-100 hover:bg-accent hover:w-6 transition-all cursor-pointer"
+              onClick={() => setSidebarCollapsed(false)}
+              title="展开文件列表"
+              aria-label="展开文件列表"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+        </>
         
         {/* Center Column */}
         <div
@@ -351,7 +370,14 @@ function AppContent() {
             </>
           ) : (
             <div className="flex-1 min-h-0 rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm flex items-center justify-center text-muted-foreground px-6 text-center">
-              请从左侧选择一个文档开始浏览
+              {fileError ? (
+                <div className="space-y-2">
+                  <div>文档不存在或无法加载{currentFile ? `：${currentFile}` : ''}</div>
+                  <div className="text-sm opacity-80">请从左侧文件列表选择其他文档</div>
+                </div>
+              ) : (
+                '请从左侧选择一个文档开始浏览'
+              )}
             </div>
           )}
         </div>
@@ -406,11 +432,17 @@ function AppContent() {
           <SheetHeader className="sr-only">
             <SheetTitle>文件列表</SheetTitle>
           </SheetHeader>
-          <FileTree 
-            files={files} 
-            onSelect={handleFileSelect}
-            selectedPath={currentFile}
-          />
+          {filesLoading ? (
+            <div className="h-full flex items-center justify-center text-sm text-muted-foreground px-4 text-center">
+              正在加载文件列表...
+            </div>
+          ) : (
+            <FileTree
+              files={files}
+              onSelect={handleFileSelect}
+              selectedPath={currentFile}
+            />
+          )}
         </SheetContent>
       </Sheet>
       

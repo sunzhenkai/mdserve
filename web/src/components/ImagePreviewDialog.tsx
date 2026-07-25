@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { downloadUrlAsFile } from '@/lib/downloadUtils'
 
 interface ImagePreviewDialogProps {
   src: string | null
@@ -33,6 +34,11 @@ export function ImagePreviewDialog({ src, alt = '', onClose }: ImagePreviewDialo
   const zoomIn = () => setScale(prev => Math.min(5, Number((prev + 0.25).toFixed(2))))
   const zoomOut = () => setScale(prev => Math.max(0.2, Number((prev - 0.25).toFixed(2))))
   const resetZoom = () => { setScale(fitScaleRef.current); setOffset({ x: 0, y: 0 }) }
+
+  const handleDownload = async () => {
+    if (!src) return
+    await downloadUrlAsFile(src)
+  }
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
@@ -84,6 +90,17 @@ export function ImagePreviewDialog({ src, alt = '', onClose }: ImagePreviewDialo
             </Button>
             <Button variant="secondary" size="icon" className="h-9 w-9" onClick={resetZoom} title="重置">
               <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleDownload}
+              title="下载图片"
+              aria-label="下载图片"
+              disabled={!src}
+            >
+              <Download className="h-4 w-4" />
             </Button>
             <Button variant="secondary" size="icon" className="h-9 w-9" onClick={onClose} title="关闭">
               <X className="h-4 w-4" />

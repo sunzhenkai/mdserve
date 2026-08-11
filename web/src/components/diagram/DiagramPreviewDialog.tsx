@@ -2,6 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import {
+  calculateDiagramFitScale,
+  clampDiagramPreviewScale,
+  type DiagramPreviewSize,
+} from '@/lib/diagram/previewScale'
 import { ensureSvgVisibleSize, measureDiagramSvg } from '@/lib/diagram/svgMeasure'
 
 interface DiagramPreviewDialogProps {
@@ -17,10 +22,17 @@ interface DiagramPreviewDialogProps {
   onClose: () => void
 }
 
+const BUTTON_ZOOM_STEP = 0.25
+const WHEEL_ZOOM_STEP = 0.15
+
+function roundScale(scale: number): number {
+  return Number(scale.toFixed(2))
+}
+
 /**
- * Fullscreen, zoomable / pannable preview dialog. Behavior mirrors the
- * previous Mermaid-only preview exactly (zoom buttons, wheel zoom, drag-pan,
- * fit-to-screen on open) so it works for every engine.
+ * Fullscreen, zoomable / pannable preview dialog for every diagram engine.
+ * Fit and zoom bounds are based on the actual preview viewport so small SVGs
+ * are displayed readably and can continue scaling beyond their intrinsic size.
  */
 export function DiagramPreviewDialog({
   svg,
@@ -30,13 +42,15 @@ export function DiagramPreviewDialog({
 }: DiagramPreviewDialogProps) {
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [svgUrl, setSvgUrl] = useState('')
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const diagramSizeRef = useRef<DiagramPreviewSize | null>(null)
   const fitScaleRef = useRef(1)
-  const [svgUrl, setSvgUrl] = useState('')
+  const isAtFitRef = useRef(true)
 
   useEffect(() => {
     if (embedMode !== 'img') {
@@ -48,62 +62,120 @@ export function DiagramPreviewDialog({
     return () => URL.revokeObjectURL(url)
   }, [svg, embedMode])
 
-  const calcFitScale = useCallback((naturalW: number, naturalH: number) => {
-    if (naturalW <= 0 || naturalH <= 0) return
-    const pad = 96
-    const fit = Math.min((window.innerWidth - pad) / naturalW, (window.innerHeight - pad) / naturalH, 1.5)
-    fitScaleRef.current = fit
-    setScale(fit)
+  useLayoutEffect(() => {
+    diagramSizeRef.current = null
+    fitScaleRef.current = 1
+    isAtFitRef.current = true
+    setScale(1)
     setOffset({ x: 0, y: 0 })
+  }, [svg, embedMode])
+
+  const recalculateFitScale = useCallback((resetView: boolean) => {
+    const viewport = viewportRef.current
+    const diagramSize = diagramSizeRef.current
+    if (!viewport || !diagramSize) return
+
+    const fitScale = calculateDiagramFitScale(
+      { width: viewport.clientWidth, height: viewport.clientHeight },
+      diagramSize,
+    )
+    if (fitScale === null) return
+
+    fitScaleRef.current = fitScale
+    const shouldResetView = resetView || isAtFitRef.current
+    setScale(previousScale => {
+      const nextScale = shouldResetView
+        ? fitScale
+        : clampDiagramPreviewScale(previousScale, fitScale)
+      return roundScale(nextScale)
+    })
+
+    if (shouldResetView) {
+      isAtFitRef.current = true
+      setOffset({ x: 0, y: 0 })
+    }
   }, [])
+
+  const setDiagramSize = useCallback((size: DiagramPreviewSize) => {
+    if (!Number.isFinite(size.width) || !Number.isFinite(size.height) || size.width <= 0 || size.height <= 0) {
+      return
+    }
+    const isInitialMeasurement = diagramSizeRef.current === null
+    diagramSizeRef.current = size
+    recalculateFitScale(isInitialMeasurement)
+  }, [recalculateFitScale])
 
   // Inline SVG (Mermaid): measure DOM after paint; img mode uses onLoad instead.
   useLayoutEffect(() => {
     if (embedMode !== 'inline') return
-    const el = contentRef.current
-    if (!el) return
+    const element = contentRef.current
+    if (!element) return
 
-    const fitToScreen = () => {
-      const { w, h } = measureDiagramSvg(el)
-      if (w <= 0 || h <= 0) return
-      ensureSvgVisibleSize(el, { w, h })
-      calcFitScale(w, h)
+    const measureAndFit = () => {
+      const size = measureDiagramSvg(element)
+      if (size.w <= 0 || size.h <= 0) return
+      ensureSvgVisibleSize(element, size)
+      setDiagramSize({ width: size.w, height: size.h })
     }
 
-    fitToScreen()
-    const raf = requestAnimationFrame(fitToScreen)
-    return () => cancelAnimationFrame(raf)
-  }, [svg, embedMode, calcFitScale])
+    measureAndFit()
+    const frameId = requestAnimationFrame(measureAndFit)
+    return () => cancelAnimationFrame(frameId)
+  }, [svg, embedMode, setDiagramSize])
 
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const delta = e.deltaY < 0 ? 0.15 : -0.15
-      setScale(prev => Math.min(5, Math.max(0.2, Number((prev + delta).toFixed(2)))))
+    const observer = new ResizeObserver(() => recalculateFitScale(false))
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [recalculateFitScale])
+
+  const changeScale = useCallback((delta: number) => {
+    isAtFitRef.current = false
+    setScale(previousScale => roundScale(clampDiagramPreviewScale(
+      previousScale + delta,
+      fitScaleRef.current,
+    )))
+  }, [])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      changeScale(event.deltaY < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP)
     }
 
     viewport.addEventListener('wheel', handleWheel, { passive: false })
     return () => viewport.removeEventListener('wheel', handleWheel)
-  }, [])
+  }, [changeScale])
 
-  const zoomIn = () => setScale(prev => Math.min(5, Number((prev + 0.25).toFixed(2))))
-  const zoomOut = () => setScale(prev => Math.max(0.2, Number((prev - 0.25).toFixed(2))))
-  const resetZoom = () => { setScale(fitScaleRef.current); setOffset({ x: 0, y: 0 }) }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return
-    e.preventDefault()
-    isDraggingRef.current = true
-    setIsDragging(true)
-    dragStartRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y }
+  const zoomIn = () => changeScale(BUTTON_ZOOM_STEP)
+  const zoomOut = () => changeScale(-BUTTON_ZOOM_STEP)
+  const resetZoom = () => {
+    isAtFitRef.current = true
+    setScale(roundScale(fitScaleRef.current))
+    setOffset({ x: 0, y: 0 })
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseDown = (event: React.MouseEvent) => {
+    if (event.button !== 0) return
+    event.preventDefault()
+    isDraggingRef.current = true
+    setIsDragging(true)
+    dragStartRef.current = { x: event.clientX - offset.x, y: event.clientY - offset.y }
+  }
+
+  const handleMouseMove = (event: React.MouseEvent) => {
     if (!isDraggingRef.current) return
-    setOffset({ x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y })
+    const nextOffset = { x: event.clientX - dragStartRef.current.x, y: event.clientY - dragStartRef.current.y }
+    if (nextOffset.x !== offset.x || nextOffset.y !== offset.y) {
+      isAtFitRef.current = false
+    }
+    setOffset(nextOffset)
   }
 
   const handleMouseUp = () => {
@@ -135,8 +207,7 @@ export function DiagramPreviewDialog({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          {/* 工具栏 */}
-          <div className="absolute top-3 right-3 z-20 flex items-center gap-2" onMouseDown={e => e.stopPropagation()}>
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-2" onMouseDown={event => event.stopPropagation()}>
             <Button variant="secondary" size="icon" className="h-9 w-9" onClick={zoomOut} title="缩小">
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -150,16 +221,15 @@ export function DiagramPreviewDialog({
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <div className="absolute left-3 top-3 z-20 rounded-md bg-background/60 backdrop-blur-sm px-2 py-1 text-xs text-foreground border border-border/50" onMouseDown={e => e.stopPropagation()}>
+          <div className="absolute left-3 top-3 z-20 rounded-md bg-background/60 backdrop-blur-sm px-2 py-1 text-xs text-foreground border border-border/50" onMouseDown={event => event.stopPropagation()}>
             {Math.round(scale * 100)}%
           </div>
 
-          {/* SVG 内容 */}
           <div className="h-full w-full flex items-center justify-center">
             {embedMode === 'inline' ? (
               <div
                 ref={contentRef}
-                className="select-none rounded-xl bg-card p-6 shadow-lg [&>svg]:block [&>svg]:max-w-none [&>svg]:h-auto"
+                className="select-none rounded-xl bg-card shadow-lg [&>svg]:block [&>svg]:max-w-none [&>svg]:h-auto"
                 style={transformStyle}
                 dangerouslySetInnerHTML={{ __html: svg }}
               />
@@ -168,12 +238,12 @@ export function DiagramPreviewDialog({
                 <img
                   src={svgUrl}
                   alt={title}
-                  className="max-w-none select-none rounded-xl bg-card p-6 shadow-lg"
+                  className="max-w-none select-none rounded-xl bg-card shadow-lg"
                   style={transformStyle}
                   draggable={false}
-                  onLoad={e => {
-                    const img = e.currentTarget
-                    calcFitScale(img.naturalWidth, img.naturalHeight)
+                  onLoad={event => {
+                    const image = event.currentTarget
+                    setDiagramSize({ width: image.naturalWidth, height: image.naturalHeight })
                   }}
                 />
               )

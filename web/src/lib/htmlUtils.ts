@@ -1,4 +1,78 @@
 import { isExternalUrl, resolveAgainstCurrentFile } from '@/lib/markdownUtils'
+import type { OutlineItem } from '@/types'
+
+/** 可执行内联脚本合计超过该长度时，视为需要原页运行的独立 HTML。 */
+export const STANDALONE_INLINE_SCRIPT_CHARS = 1500
+
+export function looksLikeStandaloneHtml(raw: string): boolean {
+  if (!raw) return false
+  if (/<html\b[^>]*\sdata-[\w-]+\s*=/i.test(raw)) return true
+
+  const withoutDataScripts = raw.replace(
+    /<script\b[^>]*type\s*=\s*["']application\/(?:ld\+)?json["'][^>]*>[\s\S]*?<\/script>/gi,
+    ''
+  )
+  if (/<script\b[^>]*\bsrc\s*=/i.test(withoutDataScripts)) return true
+
+  const inline = withoutDataScripts.match(/<script\b(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script>/gi)
+  if (!inline) return false
+
+  let length = 0
+  for (const block of inline) {
+    length += block.length
+    if (length > STANDALONE_INLINE_SCRIPT_CHARS) return true
+  }
+  return false
+}
+
+export function contentRevision(content: string): string {
+  let hash = 2166136261
+  const len = content.length
+  const step = Math.max(1, Math.floor(len / 4096))
+  for (let i = 0; i < len; i += step) {
+    hash ^= content.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  hash ^= len
+  return `${(hash >>> 0).toString(36)}-${len}`
+}
+
+export function buildStandaloneHtmlUrl(filePath: string, revision: string): string {
+  return `/api/asset?path=${encodeURIComponent(filePath)}&v=${encodeURIComponent(revision)}`
+}
+
+export function extractHtmlOutline(raw: string): OutlineItem[] {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(raw, 'text/html')
+  const root = doc.body || doc
+  const usedSlugs = new Set<string>()
+  const outline: OutlineItem[] = []
+
+  root.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(heading => {
+    if (heading.closest('svg')) return
+    const text = (heading.textContent || '').trim()
+    if (!text) return
+
+    let slug = heading.id
+    if (!slug) {
+      const base = slugifyHeading(text)
+      slug = base
+      let i = 1
+      while (usedSlugs.has(slug)) {
+        slug = `${base}-${i++}`
+      }
+    }
+
+    usedSlugs.add(slug)
+    outline.push({
+      level: parseInt(heading.tagName.charAt(1), 10),
+      text,
+      slug,
+    })
+  })
+
+  return outline
+}
 
 export function buildAssetUrl(path: string, currentFile?: string | null): string {
   let url = `/api/asset?path=${encodeURIComponent(path)}`

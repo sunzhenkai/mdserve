@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, ListPlus, ListMinus } from 'lucide-react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { scrollToOutlineSlug } from '@/lib/outlineNavigation'
 import { OutlineItem } from '../types'
 
 interface OutlineProps {
@@ -54,10 +55,7 @@ function TreeNode({ node, expandedItems, toggleExpand, depth }: TreeNodeProps) {
   const levelClass = depth + 1
 
   const handleClick = () => {
-    const element = document.getElementById(node.item.slug)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
+    scrollToOutlineSlug(node.item.slug)
   }
 
   const handleToggle = (e: React.MouseEvent) => {

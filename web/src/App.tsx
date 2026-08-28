@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sh
 import { FileProvider, UIProvider, useFile, useUI } from './contexts'
 import { useEffect, useRef } from 'react'
 import { useState } from 'react'
+import { looksLikeStandaloneHtml } from './lib/htmlUtils'
 
 /** 桌面端侧栏边缘展开/关闭按钮共用规格（以关闭按钮为基准） */
 const SIDEBAR_EDGE_BTN_CLASS =
@@ -163,6 +164,14 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
+  const htmlIsolated =
+    fileFormat === 'html' &&
+    !documentSourceVisible &&
+    Boolean(currentFile) &&
+    looksLikeStandaloneHtml(content)
+  const contentPaneClass = htmlIsolated
+    ? 'flex-1 min-h-0 overflow-hidden p-0 relative flex flex-col'
+    : `flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`
 
   const renderDocumentViewer = () => {
     const viewerProps = {
@@ -348,7 +357,7 @@ function AppContent() {
                   {/* Content */}
                   <div
                     ref={contentScrollRef}
-                    className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
+                    className={contentPaneClass}
                   >
                     {!hasDocumentInfo && (
                       <div className="absolute top-3 right-3 z-10">
@@ -502,7 +511,7 @@ function AppContent() {
 
               <div
                 ref={fullscreenScrollRef}
-                className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 ${hasDocumentInfo ? 'pt-4' : 'pt-0'} relative`}
+                className={contentPaneClass}
               >
                 {!hasDocumentInfo && (
                   <div className="absolute top-3 right-3 z-10">

@@ -13,7 +13,9 @@ example/
 ├── guides/
 │   ├── markdown-basics.md       # Markdown 基础语法
 │   ├── front-matter.md          # Front Matter 元数据
-│   └── advanced-formatting.md   # 高级格式化
+│   ├── advanced-formatting.md   # 高级格式化
+│   ├── sample-page.html         # 普通文档 HTML（脚本会被挡住）
+│   └── standalone-demo.html     # 独立交互 HTML（沙箱 iframe）
 └── tutorials/
     ├── tutorial-1.md            # 教程 1
     ├── tutorial-2.md            # 教程 2

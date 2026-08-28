@@ -12,7 +12,7 @@
 - 📑 **目录大纲** - 自动生成文档目录
 - 📊 **图表引擎** - Mermaid 开箱即用 + 自托管 Kroki 扩展 d2/plantuml/graphviz 等
 - ⚡ **实时刷新** - 文件修改后自动刷新浏览器
-- 🌐 **HTML 支持** - 安全渲染 `.html`/`.htm` 文档（无 JavaScript 执行）
+- 🌐 **HTML 支持** - 安全渲染普通 `.html`/`.htm` 文档；独立交互页在沙箱 iframe 中按原页运行
 - 🤖 **MCP 支持** - 让 AI 客户端（Claude / Cursor / ZCode 等）通过只读工具浏览文档库（stdio + HTTP）
 - 📦 **单文件部署** - 前端资源嵌入二进制文件
 

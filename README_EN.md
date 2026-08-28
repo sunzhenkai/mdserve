@@ -13,7 +13,7 @@ A real-time Markdown file server with a web interface for browsing and rendering
 - 🏷️ **Tags & Categories** - Organize documents with tags and categories
 - 📊 **Diagram Engines** - Mermaid out of the box + self-hosted Kroki for d2/plantuml/graphviz and more
 - ⚡ **Live Reload** - Auto-refresh browser when files are modified
-- 🌐 **HTML Support** - Safely render `.html`/`.htm` documents (no JavaScript execution)
+- 🌐 **HTML Support** - Safely render ordinary `.html`/`.htm` documents; standalone interactive pages run in a sandboxed iframe
 - 🤖 **MCP Support** - Let AI clients (Claude / Cursor / ZCode, …) browse the library via read-only tools (stdio + HTTP)
 - 📦 **Single Binary Deployment** - Frontend assets embedded in binary
 

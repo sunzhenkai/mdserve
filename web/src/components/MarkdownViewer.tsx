@@ -4,7 +4,8 @@ import rehypeSlug from 'rehype-slug'
 import { useEffect, useState, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { OutlineItem } from '@/types'
 import { getHighlighter, type Highlighter } from '@/lib/shiki'
-import { isExternalUrl, resolveAgainstCurrentFile, looksLikeMarkdownPath } from '@/lib/markdownUtils'
+import { isExternalUrl, resolveAgainstCurrentFile, looksLikeHtmlPath, looksLikeMarkdownPath } from '@/lib/markdownUtils'
+import { buildPathAssetUrl } from '@/lib/htmlUtils'
 import { resolveDiagramLanguage } from '@/lib/diagram/engineRegistry'
 import { DiagramBlock } from '@/components/diagram/DiagramBlock'
 import { CodeHighlight } from '@/components/CodeHighlight'
@@ -124,6 +125,10 @@ export function MarkdownViewer({ content, currentFile, showSource = false, onNav
               const resolvedPath = resolveAgainstCurrentFile(pathPart, currentFile)
 
               if (!looksLikeMarkdownPath(pathPart)) {
+                if (looksLikeHtmlPath(pathPart) && resolvedPath) {
+                  const assetHref = `${buildPathAssetUrl(resolvedPath)}${hashPart ? `#${hashPart}` : ''}`
+                  return <a href={assetHref} {...props}>{children}</a>
+                }
                 let assetHref = `/api/asset?path=${encodeURIComponent(pathPart)}`
                 if (currentFile) assetHref += `&base=${encodeURIComponent(currentFile)}`
                 if (hashPart) assetHref += `#${hashPart}`

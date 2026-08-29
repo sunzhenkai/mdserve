@@ -90,13 +90,18 @@ HTML 文件 MUST NOT 经过 Markdown frontmatter 解析；`tags` 与 `categories
 - 含外部可执行脚本（`<script src>`，不含 `application/json` / `ld+json` 数据脚本）
 - 可执行内联 `<script>` 合计超过约 1500 字符
 
-独立交互页 MUST 在应用内容区内以沙箱 iframe 加载该文件的 `/api/asset` URL，使原页 CSS、脚本与布局按独立文档运行。iframe MUST 设置 `sandbox` 为允许脚本、下载与模态框，且 MUST NOT 同时包含 `allow-scripts` 与 `allow-same-origin`。独立页 MUST NOT 用文档替换整个 mdserve 应用壳层（侧栏、工具栏、大纲栏仍由 SPA 持有）。查看源码模式 MUST 仍展示原始 HTML 文本，不进入 iframe。
+独立交互页 MUST 在应用内容区内以沙箱 iframe 加载该文件的路径形式资源地址 `/api/asset/<文档相对路径>`（可附带缓存破坏查询参数），使原页 CSS、脚本、相对静态资源与布局按独立文档运行。MUST NOT 使用 `?path=` 查询串作为独立页文档 URL，以免浏览器将相对资源解析到 `/api/<文件>`。iframe MUST 设置 `sandbox` 为允许脚本、下载与模态框，且 MUST NOT 同时包含 `allow-scripts` 与 `allow-same-origin`。独立页 MUST NOT 用文档替换整个 mdserve 应用壳层（侧栏、工具栏、大纲栏仍由 SPA 持有）。查看源码模式 MUST 仍展示原始 HTML 文本，不进入 iframe。
 
 #### Scenario: 目录树打开独立交互页
 - **WHEN** 用户从文件树打开带 `<html data-theme>`（或大量可执行内联脚本）的完整 HTML 文档
-- **THEN** 内容区 MUST 以沙箱 iframe 加载该文件的 `/api/asset` 地址
+- **THEN** 内容区 MUST 以沙箱 iframe 加载该文件的 `/api/asset/<文档相对路径>` 地址
 - **AND** 页面内脚本 MUST 可在 iframe 中运行
 - **AND** mdserve 侧栏、工具栏与大纲栏 MUST 仍然可见
+
+#### Scenario: 独立页相对静态资源按文档目录解析
+- **WHEN** 独立交互 HTML 位于 `guides/page.html` 且含 `<img src="hero.png">`
+- **THEN** 浏览器 MUST 请求 `/api/asset/guides/hero.png`
+- **AND** MUST NOT 请求 `/api/hero.png`
 
 #### Scenario: 普通文档 HTML 不进入 iframe
 - **WHEN** 用户打开仅含短内联脚本、无 `html[data-*]` 的文档型 HTML（如示例 `sample-page.html`）

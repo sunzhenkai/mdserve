@@ -286,6 +286,58 @@ func TestHandleGetFiles_Depth1Subdir(t *testing.T) {
 	}
 }
 
+func getAsset(t *testing.T, s *Server, url string) *httptest.ResponseRecorder {
+	t.Helper()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	s.router.ServeHTTP(w, req)
+	return w
+}
+
+func TestHandleGetAsset_QueryForm(t *testing.T) {
+	s, root := setupTestServer(t)
+	if err := os.MkdirAll(filepath.Join(root, "guides"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guides", "hero.png"), []byte("PNGDATA"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	w := getAsset(t, s, "/api/asset?path=hero.png&base=guides/page.html")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if w.Body.String() != "PNGDATA" {
+		t.Fatalf("body=%q", w.Body.String())
+	}
+}
+
+func TestHandleGetAsset_PathForm(t *testing.T) {
+	s, root := setupTestServer(t)
+	if err := os.MkdirAll(filepath.Join(root, "guides"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "guides", "hero.png"), []byte("PNGDATA"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	w := getAsset(t, s, "/api/asset/guides/hero.png")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if w.Body.String() != "PNGDATA" {
+		t.Fatalf("body=%q", w.Body.String())
+	}
+}
+
+func TestHandleGetAsset_PathFormTraversalRejected(t *testing.T) {
+	s, _ := setupTestServer(t)
+	w := getAsset(t, s, "/api/asset/../etc/passwd")
+	if w.Code == http.StatusOK {
+		t.Fatalf("traversal must not succeed, status=%d", w.Code)
+	}
+}
+
 func TestHandleGetFiles_InvalidPath(t *testing.T) {
 	s, _ := setupTestServer(t)
 	code, _ := getFiles(t, s, "path=does-not-exist&depth=1")

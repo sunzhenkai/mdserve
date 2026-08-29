@@ -37,8 +37,18 @@ export function contentRevision(content: string): string {
   return `${(hash >>> 0).toString(36)}-${len}`
 }
 
+/** Encode a docs-relative path as /api/asset/<segments> so the browser resolves relative assets. */
+export function buildPathAssetUrl(filePath: string): string {
+  const encoded = filePath
+    .split('/')
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join('/')
+  return `/api/asset/${encoded}`
+}
+
 export function buildStandaloneHtmlUrl(filePath: string, revision: string): string {
-  return `/api/asset?path=${encodeURIComponent(filePath)}&v=${encodeURIComponent(revision)}`
+  return `${buildPathAssetUrl(filePath)}?v=${encodeURIComponent(revision)}`
 }
 
 export function extractHtmlOutline(raw: string): OutlineItem[] {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wii/mdserve/internal/docs"
@@ -58,6 +59,12 @@ func (s *Server) handleGetFile(c *gin.Context) {
 func (s *Server) handleGetAsset(c *gin.Context) {
 	requestPath := c.Query("path")
 	basePath := c.Query("base")
+	if requestPath == "" {
+		// Path form: /api/asset/guides/hero.png — so relative URLs in standalone
+		// HTML resolve next to the document instead of /api/<file>.
+		requestPath = strings.TrimPrefix(c.Param("filepath"), "/")
+		basePath = ""
+	}
 	if requestPath == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "path parameter is required"})
 		return

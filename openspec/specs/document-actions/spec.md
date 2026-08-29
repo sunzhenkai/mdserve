@@ -26,11 +26,11 @@ TBD - created by archiving change doc-copy-and-image-download. Update Purpose af
 
 ### Requirement: HTML 文档可打开独立展示页
 
-当当前文档为 HTML 时，系统 SHALL 在文档工具栏提供「打开独立展示页」操作，在新标签页打开该文件的 `/api/asset` 原页（不带 mdserve 应用壳层）。Markdown 文档 MUST NOT 显示该入口。
+当当前文档为 HTML 时，系统 SHALL 在文档工具栏提供「打开独立展示页」操作，在新标签页打开该文件的路径形式 `/api/asset/<文档相对路径>` 原页（不带 mdserve 应用壳层），以便页内相对静态资源按文档目录解析。Markdown 文档 MUST NOT 显示该入口。
 
 #### Scenario: 打开 HTML 独立展示页
 - **WHEN** 用户打开一篇 HTML 文档并点击「打开独立展示页」
-- **THEN** 系统 MUST 在新标签页打开该文件的 `/api/asset` 地址
+- **THEN** 系统 MUST 在新标签页打开该文件的 `/api/asset/<文档相对路径>` 地址
 - **AND** 独立页 MUST 为浏览器原生渲染的完整 HTML，而非 SPA 内容区
 
 #### Scenario: Markdown 不显示独立页入口

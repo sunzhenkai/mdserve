@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Copy, Check, Download, FileCode2, Maximize2, Minimize2 } from 'lucide-react'
+import { Copy, Check, Download, ExternalLink, FileCode2, Maximize2, Minimize2 } from 'lucide-react'
 import { copyTextToClipboard } from '@/lib/markdownUtils'
 
 const btnClass =
@@ -12,6 +12,7 @@ interface DocumentToolbarProps {
   onDownload: () => void
   fullscreen?: boolean
   onToggleFullscreen: () => void
+  standaloneUrl?: string | null
 }
 
 export function DocumentToolbar({
@@ -21,6 +22,7 @@ export function DocumentToolbar({
   onDownload,
   fullscreen = false,
   onToggleFullscreen,
+  standaloneUrl,
 }: DocumentToolbarProps) {
   const [copied, setCopied] = useState(false)
 
@@ -34,6 +36,18 @@ export function DocumentToolbar({
 
   return (
     <div className="flex items-center gap-1">
+      {standaloneUrl && (
+        <a
+          href={standaloneUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${btnClass} inline-flex`}
+          title="打开独立展示页"
+          aria-label="打开独立展示页"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
       <button
         onClick={onToggleSource}
         className={btnClass}

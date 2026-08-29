@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sh
 import { FileProvider, UIProvider, useFile, useUI } from './contexts'
 import { useEffect, useRef } from 'react'
 import { useState } from 'react'
-import { looksLikeStandaloneHtml } from './lib/htmlUtils'
+import { buildAssetUrl, looksLikeStandaloneHtml } from './lib/htmlUtils'
 
 /** 桌面端侧栏边缘展开/关闭按钮共用规格（以关闭按钮为基准） */
 const SIDEBAR_EDGE_BTN_CLASS =
@@ -164,6 +164,7 @@ function AppContent() {
   }
 
   const hasDocumentInfo = Boolean(currentFile) || tags.length > 0 || categories.length > 0
+  const standaloneUrl = fileFormat === 'html' && currentFile ? buildAssetUrl(currentFile) : null
   const htmlIsolated =
     fileFormat === 'html' &&
     !documentSourceVisible &&
@@ -341,6 +342,7 @@ function AppContent() {
                           onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
                           onDownload={handleDownload}
                           onToggleFullscreen={() => setDocumentFullscreen(true)}
+                          standaloneUrl={standaloneUrl}
                         />
                       </div>
 
@@ -367,6 +369,7 @@ function AppContent() {
                           onToggleSource={() => setDocumentSourceVisible(prev => !prev)}
                           onDownload={handleDownload}
                           onToggleFullscreen={() => setDocumentFullscreen(true)}
+                          standaloneUrl={standaloneUrl}
                         />
                       </div>
                     )}
@@ -496,6 +499,7 @@ function AppContent() {
                       onDownload={handleDownload}
                       fullscreen
                       onToggleFullscreen={() => setDocumentFullscreen(false)}
+                      standaloneUrl={standaloneUrl}
                     />
                   </div>
 
@@ -522,6 +526,7 @@ function AppContent() {
                       onDownload={handleDownload}
                       fullscreen
                       onToggleFullscreen={() => setDocumentFullscreen(false)}
+                      standaloneUrl={standaloneUrl}
                     />
                   </div>
                 )}
